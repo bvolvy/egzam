@@ -94,7 +94,7 @@ const PrivacyTermsPage: React.FC<PrivacyTermsPageProps> = ({ onClose }) => {
                       </li>
                       <li className="flex items-center">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        Nom d'utilisateur choisi
+                        Nom complet
                       </li>
                       <li className="flex items-center">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
