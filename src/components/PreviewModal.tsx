@@ -11,13 +11,14 @@ interface PreviewModalProps {
 
 const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, onFavorite }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [zoom, setZoom] = useState(100);
+  const [zoom, setZoom] = useState(1.0);
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string>('');
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [error, setError] = useState<string>('');
   const [totalPages, setTotalPages] = useState(1);
+  const [iframeKey, setIframeKey] = useState(0); // Pour forcer le rechargement de l'iframe
 
   // Charger le document réel
   useEffect(() => {
@@ -28,22 +29,20 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
       try {
         // Si c'est un document téléversé récemment avec fileData
         if (exam.fileData) {
-          console.log('Chargement du fichier téléversé:', exam.fileData.name);
+          console.log('📄 Chargement du fichier téléversé:', exam.fileData.name);
           const url = URL.createObjectURL(exam.fileData);
           setDocumentUrl(url);
-          
-          // Estimer le nombre de pages basé sur la taille du fichier
           setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
         } 
         // Si c'est un document existant avec documentUrl
         else if (exam.documentUrl) {
-          console.log('Chargement du document existant:', exam.documentUrl);
+          console.log('🔗 Chargement du document existant:', exam.documentUrl);
           setDocumentUrl(exam.documentUrl);
           setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
         }
         // Sinon, récupérer depuis le serveur/stockage
         else {
-          console.log('Récupération du document depuis le serveur pour:', exam.id);
+          console.log('🌐 Récupération du document depuis le serveur pour:', exam.id);
           const documentData = await fetchDocumentFromServer(exam.id);
           
           if (documentData) {
@@ -57,7 +56,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
         }
         
       } catch (error) {
-        console.error('Erreur lors du chargement du document:', error);
+        console.error('❌ Erreur lors du chargement du document:', error);
         setError('Impossible de charger le document. Le fichier pourrait être indisponible ou corrompu.');
       } finally {
         setIsLoadingContent(false);
@@ -76,7 +75,6 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
 
   // Fonction pour récupérer le document depuis le serveur
   const fetchDocumentFromServer = async (examId: string): Promise<ArrayBuffer | null> => {
-    // Simuler un délai de chargement
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // En production, ceci ferait un appel API réel:
@@ -84,13 +82,11 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
     // if (!response.ok) throw new Error('Document non trouvé');
     // return await response.arrayBuffer();
     
-    // Pour les documents mock existants, générer un contenu simple
-    console.log('Génération d\'un document mock pour:', examId);
+    console.log('🔧 Génération d\'un document mock pour:', examId);
     return generateMockDocument(examId);
   };
 
   const generateMockDocument = (examId: string): ArrayBuffer => {
-    // Générer un PDF simple pour les documents mock
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -124,38 +120,20 @@ endobj
 
 4 0 obj
 <<
-/Length 600
+/Length 400
 >>
 stream
 BT
 /F1 16 Tf
 50 750 Td
-(DOCUMENT D'EXAMEN) Tj
-0 -30 Td
-/F2 12 Tf
-(ID: ${examId}) Tj
+(DOCUMENT D'EXAMEN - ${examId}) Tj
 0 -40 Td
+/F2 12 Tf
 (Ceci est un document d'exemple pour la demonstration.) Tj
 0 -20 Td
-(En production, le contenu reel du fichier televerse) Tj
-0 -20 Td
-(serait affiche ici.) Tj
+(Le contenu reel du fichier televerse apparaitrait ici.) Tj
 0 -40 Td
-/F1 14 Tf
-(CONTENU DU DOCUMENT:) Tj
-0 -30 Td
-/F2 10 Tf
-(Le contenu reel de l'examen apparaitrait ici) Tj
-0 -15 Td
-(avec toutes les questions, exercices et instructions) Tj
-0 -15 Td
-(exactement comme dans le fichier original televerse.) Tj
-0 -30 Td
-(Ce document mock sera remplace par le vrai contenu) Tj
-0 -15 Td
-(une fois que le systeme sera connecte a un serveur) Tj
-0 -15 Td
-(de stockage de fichiers reel.) Tj
+(En production, ce sera le vrai contenu PDF.) Tj
 ET
 endstream
 endobj
@@ -183,15 +161,15 @@ xref
 0000000058 00000 n 
 0000000115 00000 n 
 0000000274 00000 n 
-0000000925 00000 n 
-0000000984 00000 n 
+0000000725 00000 n 
+0000000784 00000 n 
 trailer
 <<
 /Size 7
 /Root 1 0 R
 >>
 startxref
-1040
+840
 %%EOF`;
 
     const encoder = new TextEncoder();
@@ -225,20 +203,24 @@ startxref
   };
 
   const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 25, 200));
+    const newZoom = Math.min(zoom + 0.25, 3.0);
+    setZoom(newZoom);
+    setIframeKey(prev => prev + 1); // Force iframe reload
   };
 
   const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 25, 50));
+    const newZoom = Math.max(zoom - 0.25, 0.5);
+    setZoom(newZoom);
+    setIframeKey(prev => prev + 1); // Force iframe reload
   };
 
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360);
+    setIframeKey(prev => prev + 1); // Force iframe reload
   };
 
   const handleDownloadClick = () => {
     if (documentUrl) {
-      // Télécharger le document réel
       const link = document.createElement('a');
       link.href = documentUrl;
       link.download = exam.fileName;
@@ -248,9 +230,24 @@ startxref
       link.click();
       document.body.removeChild(link);
       
-      // Mettre à jour le compteur
       onDownload(exam.id);
     }
+  };
+
+  // Construire l'URL avec les paramètres de zoom et rotation
+  const buildPdfUrl = () => {
+    if (!documentUrl) return '';
+    
+    const params = new URLSearchParams();
+    params.set('page', currentPage.toString());
+    params.set('zoom', (zoom * 100).toString()); // Convertir en pourcentage
+    
+    // Pour la rotation, on utilise un paramètre personnalisé
+    if (rotation !== 0) {
+      params.set('rotate', rotation.toString());
+    }
+    
+    return `${documentUrl}#${params.toString()}`;
   };
 
   return (
@@ -273,16 +270,18 @@ startxref
           <div className="flex items-center space-x-2">
             <button
               onClick={handleZoomOut}
-              disabled={isLoadingContent}
+              disabled={isLoadingContent || zoom <= 0.5}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               title="Zoom arrière"
             >
               <ZoomOut className="h-4 w-4" />
             </button>
-            <span className="text-sm font-medium px-2">{zoom}%</span>
+            <span className="text-sm font-medium px-2 min-w-[60px] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
             <button
               onClick={handleZoomIn}
-              disabled={isLoadingContent}
+              disabled={isLoadingContent || zoom >= 3.0}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               title="Zoom avant"
             >
@@ -383,6 +382,47 @@ startxref
                   </div>
                 </div>
 
+                {/* Contrôles de zoom détaillés */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700">Zoom</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Niveau actuel:</span>
+                      <span className="text-sm font-medium">{Math.round(zoom * 100)}%</span>
+                    </div>
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => { setZoom(0.5); setIframeKey(prev => prev + 1); }}
+                        disabled={isLoadingContent}
+                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                      >
+                        50%
+                      </button>
+                      <button
+                        onClick={() => { setZoom(1.0); setIframeKey(prev => prev + 1); }}
+                        disabled={isLoadingContent}
+                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                      >
+                        100%
+                      </button>
+                      <button
+                        onClick={() => { setZoom(1.5); setIframeKey(prev => prev + 1); }}
+                        disabled={isLoadingContent}
+                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                      >
+                        150%
+                      </button>
+                      <button
+                        onClick={() => { setZoom(2.0); setIframeKey(prev => prev + 1); }}
+                        disabled={isLoadingContent}
+                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                      >
+                        200%
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Navigation des pages */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-700">Navigation</h4>
@@ -438,7 +478,7 @@ startxref
           )}
 
           {/* Visionneuse de document */}
-          <div className="flex-1 bg-gray-100 flex items-center justify-center overflow-auto">
+          <div className="flex-1 bg-gray-100 flex items-center justify-center overflow-hidden">
             {isLoadingContent ? (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
@@ -464,14 +504,14 @@ startxref
                 </div>
               </div>
             ) : documentUrl ? (
-              <div className="w-full h-full p-4">
+              <div className="w-full h-full relative">
                 <iframe
-                  src={`${documentUrl}#page=${currentPage}`}
-                  className="w-full h-full border border-gray-300 rounded-lg shadow-lg"
+                  key={iframeKey} // Force le rechargement quand les paramètres changent
+                  src={buildPdfUrl()}
+                  className="w-full h-full border-0"
                   style={{
-                    transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-                    transformOrigin: 'center',
-                    transition: 'transform 0.3s ease'
+                    transform: rotation !== 0 ? `rotate(${rotation}deg)` : 'none',
+                    transformOrigin: 'center'
                   }}
                   title={`Prévisualisation de ${exam.title}`}
                 />
@@ -509,6 +549,7 @@ startxref
                 →
               </button>
               <div className="w-px h-6 bg-gray-300"></div>
+              <span className="text-xs text-gray-600">{Math.round(zoom * 100)}%</span>
               <button
                 onClick={handleDownloadClick}
                 className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
