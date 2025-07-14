@@ -26,21 +26,34 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
       setError('');
       
       try {
-        // Simuler le chargement du document réel depuis le serveur/stockage
-        // En production, ceci ferait un appel API pour récupérer le document
-        const documentData = await fetchDocumentContent(exam.id);
-        
-        if (documentData) {
-          // Créer une URL pour le document
-          const blob = new Blob([documentData], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
+        // Si c'est un document téléversé récemment avec fileData
+        if (exam.fileData) {
+          console.log('Chargement du fichier téléversé:', exam.fileData.name);
+          const url = URL.createObjectURL(exam.fileData);
           setDocumentUrl(url);
           
           // Estimer le nombre de pages basé sur la taille du fichier
-          // En production, ceci serait fourni par l'API ou calculé lors de l'upload
           setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
-        } else {
-          throw new Error('Document non trouvé');
+        } 
+        // Si c'est un document existant avec documentUrl
+        else if (exam.documentUrl) {
+          console.log('Chargement du document existant:', exam.documentUrl);
+          setDocumentUrl(exam.documentUrl);
+          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
+        }
+        // Sinon, récupérer depuis le serveur/stockage
+        else {
+          console.log('Récupération du document depuis le serveur pour:', exam.id);
+          const documentData = await fetchDocumentFromServer(exam.id);
+          
+          if (documentData) {
+            const blob = new Blob([documentData], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            setDocumentUrl(url);
+            setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
+          } else {
+            throw new Error('Document non trouvé sur le serveur');
+          }
         }
         
       } catch (error) {
@@ -59,25 +72,25 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
         URL.revokeObjectURL(documentUrl);
       }
     };
-  }, [exam.id]);
+  }, [exam.id, exam.fileData, exam.documentUrl]);
 
-  // Fonction simulée pour récupérer le contenu du document
-  // En production, ceci ferait un appel API réel
-  const fetchDocumentContent = async (examId: string): Promise<ArrayBuffer | null> => {
+  // Fonction pour récupérer le document depuis le serveur
+  const fetchDocumentFromServer = async (examId: string): Promise<ArrayBuffer | null> => {
     // Simuler un délai de chargement
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Simuler la récupération du document réel
-    // En production, ceci serait quelque chose comme:
+    // En production, ceci ferait un appel API réel:
     // const response = await fetch(`/api/documents/${examId}`);
+    // if (!response.ok) throw new Error('Document non trouvé');
     // return await response.arrayBuffer();
     
-    // Pour la démo, on génère un PDF simple mais réaliste
-    return generateSimulatedPDF(examId);
+    // Pour les documents mock existants, générer un contenu simple
+    console.log('Génération d\'un document mock pour:', examId);
+    return generateMockDocument(examId);
   };
 
-  const generateSimulatedPDF = (examId: string): ArrayBuffer => {
-    // Générer un PDF plus réaliste basé sur l'ID de l'examen
+  const generateMockDocument = (examId: string): ArrayBuffer => {
+    // Générer un PDF simple pour les documents mock
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -111,70 +124,38 @@ endobj
 
 4 0 obj
 <<
-/Length 800
+/Length 600
 >>
 stream
 BT
 /F1 16 Tf
 50 750 Td
-(MINISTERE DE L'EDUCATION NATIONALE) Tj
-0 -20 Td
-(REPUBLIQUE D'HAITI) Tj
-0 -40 Td
+(DOCUMENT D'EXAMEN) Tj
+0 -30 Td
 /F2 12 Tf
-(Nom: _________________________ Prenom: _________________________) Tj
+(ID: ${examId}) Tj
+0 -40 Td
+(Ceci est un document d'exemple pour la demonstration.) Tj
 0 -20 Td
-(Classe: _______________        Date: _______________) Tj
+(En production, le contenu reel du fichier televerse) Tj
+0 -20 Td
+(serait affiche ici.) Tj
 0 -40 Td
 /F1 14 Tf
-(INSTRUCTIONS:) Tj
-0 -20 Td
-/F2 10 Tf
-(• Duree de l'epreuve: 2 heures) Tj
-0 -15 Td
-(• Repondez a toutes les questions) Tj
-0 -15 Td
-(• Utilisez un stylo bleu ou noir) Tj
-0 -15 Td
-(• Justifiez vos reponses) Tj
+(CONTENU DU DOCUMENT:) Tj
 0 -30 Td
-/F1 12 Tf
-(EXERCICE 1: (5 points)) Tj
-0 -20 Td
 /F2 10 Tf
-(Question 1: Resolvez l'equation suivante:) Tj
+(Le contenu reel de l'examen apparaitrait ici) Tj
 0 -15 Td
-(2x + 5 = 13) Tj
-0 -25 Td
-(Question 2: Calculez la valeur de:) Tj
+(avec toutes les questions, exercices et instructions) Tj
 0 -15 Td
-(3 × 4 + 2 × 5) Tj
+(exactement comme dans le fichier original televerse.) Tj
 0 -30 Td
-/F1 12 Tf
-(EXERCICE 2: (7 points)) Tj
-0 -20 Td
-/F2 10 Tf
-(Soit f(x) = x² - 4x + 3) Tj
+(Ce document mock sera remplace par le vrai contenu) Tj
 0 -15 Td
-(a) Determinez les racines de f(x)) Tj
+(une fois que le systeme sera connecte a un serveur) Tj
 0 -15 Td
-(b) Tracez la courbe representative) Tj
-0 -15 Td
-(c) Etudiez le signe de f(x)) Tj
-0 -30 Td
-/F1 12 Tf
-(EXERCICE 3: (8 points)) Tj
-0 -20 Td
-/F2 10 Tf
-(Un triangle ABC a pour cotes:) Tj
-0 -15 Td
-(AB = 5 cm, BC = 12 cm, AC = 13 cm) Tj
-0 -15 Td
-(a) Montrez que ce triangle est rectangle) Tj
-0 -15 Td
-(b) Calculez son aire et son perimetre) Tj
-0 -15 Td
-(c) Determinez les angles du triangle) Tj
+(de stockage de fichiers reel.) Tj
 ET
 endstream
 endobj
@@ -202,18 +183,17 @@ xref
 0000000058 00000 n 
 0000000115 00000 n 
 0000000274 00000 n 
-0000001125 00000 n 
-0000001184 00000 n 
+0000000925 00000 n 
+0000000984 00000 n 
 trailer
 <<
 /Size 7
 /Root 1 0 R
 >>
 startxref
-1240
+1040
 %%EOF`;
 
-    // Convertir en ArrayBuffer
     const encoder = new TextEncoder();
     return encoder.encode(pdfContent).buffer;
   };
@@ -283,6 +263,9 @@ startxref
             <div>
               <h2 className="text-lg font-bold text-gray-900">Prévisualisation</h2>
               <p className="text-sm text-gray-600">{exam.fileName}</p>
+              {exam.fileData && (
+                <p className="text-xs text-green-600">📄 Document téléversé récemment</p>
+              )}
             </div>
           </div>
           
@@ -382,6 +365,24 @@ startxref
                   </div>
                 </div>
 
+                {/* Statut du document */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700">Statut</h4>
+                  <div className="text-sm">
+                    {exam.fileData ? (
+                      <div className="flex items-center p-2 bg-green-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        <span className="text-green-800">Document téléversé récemment</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center p-2 bg-blue-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                        <span className="text-blue-800">Document existant</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Navigation des pages */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-700">Navigation</h4>
@@ -443,7 +444,9 @@ startxref
                 <div className="text-center">
                   <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
                   <p className="text-gray-600">Chargement du document...</p>
-                  <p className="text-sm text-gray-500 mt-2">Récupération du contenu réel</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {exam.fileData ? 'Traitement du fichier téléversé' : 'Récupération du contenu'}
+                  </p>
                 </div>
               </div>
             ) : error ? (

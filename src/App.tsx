@@ -149,12 +149,13 @@ function App() {
       favorites: 0,
       uploader: { id: '1', name: 'Utilisateur' },
       isFavorited: false,
-      fileData: examData.fileData // Garder la référence au fichier réel
+      fileData: examData.fileData, // Garder la référence au fichier réel
+      documentUrl: examData.documentUrl // URL du document si disponible
     };
 
     setExams(prev => [newExam, ...prev]);
     setShowUploadModal(false);
-    alert('Examen téléversé avec succès !');
+    alert('Examen téléversé avec succès ! Le contenu réel sera visible dans la prévisualisation.');
   };
 
   return (

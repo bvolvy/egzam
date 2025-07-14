@@ -13,7 +13,8 @@ export const mockExams: Exam[] = [
     downloads: 245,
     favorites: 34,
     uploader: { id: '1', name: 'Prof. Martin' },
-    isFavorited: false
+    isFavorited: false,
+    documentUrl: undefined // Pas de document réel pour les mocks
   },
   {
     id: '2',
@@ -27,7 +28,8 @@ export const mockExams: Exam[] = [
     downloads: 187,
     favorites: 28,
     uploader: { id: '2', name: 'Marie Dupont' },
-    isFavorited: true
+    isFavorited: true,
+    documentUrl: undefined
   },
   {
     id: '3',
