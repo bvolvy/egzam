@@ -148,7 +148,8 @@ function App() {
       downloads: 0,
       favorites: 0,
       uploader: { id: '1', name: 'Utilisateur' },
-      isFavorited: false
+      isFavorited: false,
+      fileData: examData.fileData // Garder la référence au fichier réel
     };
 
     setExams(prev => [newExam, ...prev]);

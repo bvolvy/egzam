@@ -90,8 +90,21 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
 
     setIsUploading(true);
     
-    // Simulate upload
+    // Simuler l'upload du fichier réel
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // En production, ici on uploadrait le fichier réel vers le serveur
+    // const formDataToSend = new FormData();
+    // formDataToSend.append('file', formData.file);
+    // formDataToSend.append('title', formData.title);
+    // formDataToSend.append('description', formData.description);
+    // formDataToSend.append('classe', formData.classe);
+    // formDataToSend.append('matiere', formData.matiere);
+    // 
+    // const response = await fetch('/api/upload', {
+    //   method: 'POST',
+    //   body: formDataToSend
+    // });
     
     const examData = {
       title: formData.title,
@@ -99,7 +112,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
       classe: formData.classe,
       matiere: formData.matiere,
       fileName: formData.file.name,
-      fileSize: formData.file.size / (1024 * 1024) // Convert to MB
+      fileSize: formData.file.size / (1024 * 1024), // Convert to MB
+      fileData: formData.file // Garder une référence au fichier réel
     };
 
     onUpload(examData);
@@ -162,7 +176,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                 name="title"
                 accept=".pdf"
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                accept=".pdf"
                 placeholder="Ex: Devoir de Mathématiques - Fonctions"
                 required
               />

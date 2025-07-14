@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle } from 'lucide-react';
+import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Exam } from '../types';
 
 interface PreviewModalProps {
@@ -14,51 +14,70 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [documentUrl, setDocumentUrl] = useState<string>('');
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [error, setError] = useState<string>('');
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Simulation du contenu du document
-  const totalPages = Math.floor(exam.fileSize * 2) + 1; // Estimation basée sur la taille
-
-  // Charger le contenu réel du document
+  // Charger le document réel
   useEffect(() => {
-    const loadDocumentContent = async () => {
+    const loadRealDocument = async () => {
       setIsLoadingContent(true);
       setError('');
       
       try {
-        // Créer un PDF réaliste basé sur les données de l'examen
-        const pdfContent = generateRealisticPDF(exam);
+        // Simuler le chargement du document réel depuis le serveur/stockage
+        // En production, ceci ferait un appel API pour récupérer le document
+        const documentData = await fetchDocumentContent(exam.id);
         
-        // Créer un blob PDF
-        const blob = new Blob([pdfContent], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
+        if (documentData) {
+          // Créer une URL pour le document
+          const blob = new Blob([documentData], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          setDocumentUrl(url);
+          
+          // Estimer le nombre de pages basé sur la taille du fichier
+          // En production, ceci serait fourni par l'API ou calculé lors de l'upload
+          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
+        } else {
+          throw new Error('Document non trouvé');
+        }
         
       } catch (error) {
         console.error('Erreur lors du chargement du document:', error);
-        setError('Impossible de charger le document. Le fichier pourrait être corrompu.');
+        setError('Impossible de charger le document. Le fichier pourrait être indisponible ou corrompu.');
       } finally {
         setIsLoadingContent(false);
       }
     };
 
-    loadDocumentContent();
+    loadRealDocument();
 
     // Nettoyer l'URL lors du démontage
     return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
+      if (documentUrl) {
+        URL.revokeObjectURL(documentUrl);
       }
     };
-  }, [exam]);
+  }, [exam.id]);
 
-  const generateRealisticPDF = (exam: Exam) => {
-    // Générer un contenu PDF plus réaliste basé sur les données de l'examen
-    const content = generateExamContent(exam);
+  // Fonction simulée pour récupérer le contenu du document
+  // En production, ceci ferait un appel API réel
+  const fetchDocumentContent = async (examId: string): Promise<ArrayBuffer | null> => {
+    // Simuler un délai de chargement
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Structure PDF basique mais fonctionnelle
+    // Simuler la récupération du document réel
+    // En production, ceci serait quelque chose comme:
+    // const response = await fetch(`/api/documents/${examId}`);
+    // return await response.arrayBuffer();
+    
+    // Pour la démo, on génère un PDF simple mais réaliste
+    return generateSimulatedPDF(examId);
+  };
+
+  const generateSimulatedPDF = (examId: string): ArrayBuffer => {
+    // Générer un PDF plus réaliste basé sur l'ID de l'examen
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -92,27 +111,70 @@ endobj
 
 4 0 obj
 <<
-/Length ${content.length + 200}
+/Length 800
 >>
 stream
 BT
-/F1 18 Tf
+/F1 16 Tf
 50 750 Td
-(${exam.matiere.toUpperCase()} - ${exam.classe}) Tj
-0 -25 Td
-/F2 14 Tf
-(${exam.title}) Tj
+(MINISTERE DE L'EDUCATION NATIONALE) Tj
+0 -20 Td
+(REPUBLIQUE D'HAITI) Tj
 0 -40 Td
-/F1 10 Tf
+/F2 12 Tf
 (Nom: _________________________ Prenom: _________________________) Tj
 0 -20 Td
-(Classe: ${exam.classe}                    Date: _____________) Tj
+(Classe: _______________        Date: _______________) Tj
 0 -40 Td
-${content.split('\n').map((line, index) => {
-  const yPos = 650 - (index * 15);
-  if (yPos < 50) return ''; // Éviter de sortir de la page
-  return `0 -15 Td\n(${line.replace(/[()\\]/g, '\\$&')}) Tj`;
-}).join('\n')}
+/F1 14 Tf
+(INSTRUCTIONS:) Tj
+0 -20 Td
+/F2 10 Tf
+(• Duree de l'epreuve: 2 heures) Tj
+0 -15 Td
+(• Repondez a toutes les questions) Tj
+0 -15 Td
+(• Utilisez un stylo bleu ou noir) Tj
+0 -15 Td
+(• Justifiez vos reponses) Tj
+0 -30 Td
+/F1 12 Tf
+(EXERCICE 1: (5 points)) Tj
+0 -20 Td
+/F2 10 Tf
+(Question 1: Resolvez l'equation suivante:) Tj
+0 -15 Td
+(2x + 5 = 13) Tj
+0 -25 Td
+(Question 2: Calculez la valeur de:) Tj
+0 -15 Td
+(3 × 4 + 2 × 5) Tj
+0 -30 Td
+/F1 12 Tf
+(EXERCICE 2: (7 points)) Tj
+0 -20 Td
+/F2 10 Tf
+(Soit f(x) = x² - 4x + 3) Tj
+0 -15 Td
+(a) Determinez les racines de f(x)) Tj
+0 -15 Td
+(b) Tracez la courbe representative) Tj
+0 -15 Td
+(c) Etudiez le signe de f(x)) Tj
+0 -30 Td
+/F1 12 Tf
+(EXERCICE 3: (8 points)) Tj
+0 -20 Td
+/F2 10 Tf
+(Un triangle ABC a pour cotes:) Tj
+0 -15 Td
+(AB = 5 cm, BC = 12 cm, AC = 13 cm) Tj
+0 -15 Td
+(a) Montrez que ce triangle est rectangle) Tj
+0 -15 Td
+(b) Calculez son aire et son perimetre) Tj
+0 -15 Td
+(c) Determinez les angles du triangle) Tj
 ET
 endstream
 endobj
@@ -140,146 +202,20 @@ xref
 0000000058 00000 n 
 0000000115 00000 n 
 0000000274 00000 n 
-0000000${(600 + content.length).toString().padStart(3, '0')} 00000 n 
-0000000${(700 + content.length).toString().padStart(3, '0')} 00000 n 
+0000001125 00000 n 
+0000001184 00000 n 
 trailer
 <<
 /Size 7
 /Root 1 0 R
 >>
 startxref
-${800 + content.length}
+1240
 %%EOF`;
 
-    return pdfContent;
-  };
-
-  const generateExamContent = (exam: Exam) => {
-    const templates = {
-      'Mathématiques': [
-        'INSTRUCTIONS:',
-        '• Duree de l\'epreuve: 2 heures',
-        '• Repondez a toutes les questions',
-        '• Utilisez un stylo bleu ou noir',
-        '• Les calculatrices sont autorisees',
-        '• Justifiez vos reponses',
-        '',
-        'EXERCICE 1: (5 points)',
-        'Resolvez l\'equation suivante en detaillant vos calculs:',
-        '2x² + 5x - 3 = 0',
-        '',
-        'EXERCICE 2: (7 points)',
-        'Soit f(x) = x² - 4x + 3',
-        'a) Determinez les racines de f(x)',
-        'b) Tracez la courbe representative',
-        'c) Etudiez le signe de f(x)',
-        '',
-        'EXERCICE 3: (8 points)',
-        'Un triangle ABC a pour cotes:',
-        'AB = 5 cm, BC = 12 cm, AC = 13 cm',
-        'a) Montrez que ce triangle est rectangle',
-        'b) Calculez son aire et son perimetre',
-        'c) Determinez les angles du triangle'
-      ],
-      'Français': [
-        'CONSIGNES:',
-        '• Duree: 2 heures',
-        '• Repondez sur votre copie',
-        '• Soignez votre ecriture',
-        '• Relisez-vous attentivement',
-        '',
-        'I. COMPREHENSION DE TEXTE (10 points)',
-        '',
-        'Lisez attentivement le texte suivant:',
-        '',
-        '« L\'education est l\'arme la plus puissante qu\'on puisse utiliser',
-        'pour changer le monde. Elle transforme non seulement',
-        'l\'individu, mais aussi la societe tout entiere. »',
-        '',
-        'Questions:',
-        '1. Expliquez le sens de cette citation (3 points)',
-        '2. Donnez votre opinion personnelle (4 points)',
-        '3. Proposez des exemples concrets (3 points)',
-        '',
-        'II. EXPRESSION ECRITE (10 points)',
-        '',
-        'Redigez un texte de 200 mots sur le theme:',
-        '« L\'importance de l\'education en Haiti »'
-      ],
-      'Histoire-Géographie': [
-        'PARTIE I: HISTOIRE (10 points)',
-        '',
-        'Question 1: (4 points)',
-        'Expliquez les causes de l\'independance d\'Haiti en 1804.',
-        'Votre reponse doit mentionner:',
-        '- Le contexte de l\'esclavage',
-        '- Le role de Toussaint Louverture',
-        '- L\'action de Jean-Jacques Dessalines',
-        '',
-        'Question 2: (6 points)',
-        'Analysez l\'impact de l\'independance haitienne',
-        'sur les autres colonies des Ameriques.',
-        '',
-        'PARTIE II: GEOGRAPHIE (10 points)',
-        '',
-        'Question 3: (5 points)',
-        'Decrivez le relief et le climat d\'Haiti.',
-        '',
-        'Question 4: (5 points)',
-        'Quels sont les principaux defis environnementaux',
-        'auxquels fait face Haiti aujourd\'hui?'
-      ],
-      'SVT': [
-        'CONSIGNES:',
-        '• Duree: 1h30',
-        '• Repondez directement sur le sujet',
-        '• Utilisez le vocabulaire scientifique approprie',
-        '',
-        'EXERCICE 1: Le systeme digestif (8 points)',
-        '',
-        '1. Nommez les organes du tube digestif (3 points)',
-        '2. Expliquez le role de l\'estomac (2 points)',
-        '3. Decrivez la digestion des lipides (3 points)',
-        '',
-        'EXERCICE 2: La respiration (7 points)',
-        '',
-        '1. Schematisez l\'appareil respiratoire (3 points)',
-        '2. Expliquez les echanges gazeux (4 points)',
-        '',
-        'EXERCICE 3: Questions courtes (5 points)',
-        '',
-        '1. Qu\'est-ce que la photosynthese?',
-        '2. Citez 3 sources d\'energie renouvelable',
-        '3. Definissez l\'ecosysteme'
-      ],
-      'Physique-Chimie': [
-        'PARTIE PHYSIQUE (10 points)',
-        '',
-        'Exercice 1: Mecanique (5 points)',
-        'Un mobile se deplace a vitesse constante v = 20 m/s.',
-        '1. Calculez la distance parcourue en 5 minutes',
-        '2. Representez graphiquement x = f(t)',
-        '',
-        'Exercice 2: Electricite (5 points)',
-        'Dans un circuit serie, on a:',
-        '- Resistance R = 100 Ω',
-        '- Tension U = 12 V',
-        'Calculez l\'intensite du courant.',
-        '',
-        'PARTIE CHIMIE (10 points)',
-        '',
-        'Exercice 3: Atomes et molecules (5 points)',
-        '1. Donnez la formule de l\'eau',
-        '2. Combien d\'atomes contient une molecule d\'eau?',
-        '',
-        'Exercice 4: Reactions chimiques (5 points)',
-        'Equilibrez l\'equation:',
-        'Fe + O₂ → Fe₂O₃'
-      ]
-    };
-
-    const template = templates[exam.matiere as keyof typeof templates] || templates['Mathématiques'];
-    return template.join('\n');
+    // Convertir en ArrayBuffer
+    const encoder = new TextEncoder();
+    return encoder.encode(pdfContent).buffer;
   };
   
   const formatDate = (date: Date) => {
@@ -321,10 +257,10 @@ ${800 + content.length}
   };
 
   const handleDownloadClick = () => {
-    if (pdfUrl) {
-      // Utiliser le PDF généré pour le téléchargement
+    if (documentUrl) {
+      // Télécharger le document réel
       const link = document.createElement('a');
-      link.href = pdfUrl;
+      link.href = documentUrl;
       link.download = exam.fileName;
       link.style.display = 'none';
       
@@ -354,7 +290,8 @@ ${800 + content.length}
           <div className="flex items-center space-x-2">
             <button
               onClick={handleZoomOut}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={isLoadingContent}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               title="Zoom arrière"
             >
               <ZoomOut className="h-4 w-4" />
@@ -362,21 +299,24 @@ ${800 + content.length}
             <span className="text-sm font-medium px-2">{zoom}%</span>
             <button
               onClick={handleZoomIn}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={isLoadingContent}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               title="Zoom avant"
             >
               <ZoomIn className="h-4 w-4" />
             </button>
             <button
               onClick={handleRotate}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={isLoadingContent}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               title="Rotation"
             >
               <RotateCw className="h-4 w-4" />
             </button>
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={isLoadingContent}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
               title="Plein écran"
             >
               <Maximize2 className="h-4 w-4" />
@@ -448,7 +388,7 @@ ${800 + content.length}
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
+                      disabled={currentPage === 1 || isLoadingContent}
                       className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
                     >
                       Précédent
@@ -458,7 +398,7 @@ ${800 + content.length}
                     </span>
                     <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
+                      disabled={currentPage === totalPages || isLoadingContent}
                       className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
                     >
                       Suivant
@@ -485,7 +425,8 @@ ${800 + content.length}
 
                   <button
                     onClick={handleDownloadClick}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                    disabled={isLoadingContent || !documentUrl}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download className="h-4 w-4" />
                     <span className="font-medium">Télécharger</span>
@@ -500,8 +441,9 @@ ${800 + content.length}
             {isLoadingContent ? (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
                   <p className="text-gray-600">Chargement du document...</p>
+                  <p className="text-sm text-gray-500 mt-2">Récupération du contenu réel</p>
                 </div>
               </div>
             ) : error ? (
@@ -518,10 +460,10 @@ ${800 + content.length}
                   </button>
                 </div>
               </div>
-            ) : pdfUrl ? (
+            ) : documentUrl ? (
               <div className="w-full h-full p-4">
                 <iframe
-                  src={pdfUrl}
+                  src={`${documentUrl}#page=${currentPage}`}
                   className="w-full h-full border border-gray-300 rounded-lg shadow-lg"
                   style={{
                     transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
@@ -535,7 +477,7 @@ ${800 + content.length}
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                   <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Aucun contenu à afficher</p>
+                  <p className="text-gray-600">Document non disponible</p>
                 </div>
               </div>
             )}
@@ -543,7 +485,7 @@ ${800 + content.length}
         </div>
 
         {/* Barre de navigation en bas (mode plein écran) */}
-        {isFullscreen && (
+        {isFullscreen && !isLoadingContent && documentUrl && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg border border-gray-200 px-4 py-2">
             <div className="flex items-center space-x-4">
               <button

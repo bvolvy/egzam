@@ -27,6 +27,8 @@ export interface Exam {
     name: string;
   };
   isFavorited?: boolean;
+  fileData?: File; // Référence au fichier réel pour les nouveaux uploads
+  documentUrl?: string; // URL du document stocké
 }
 
 export interface FilterOptions {
