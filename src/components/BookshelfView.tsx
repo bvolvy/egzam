@@ -231,7 +231,7 @@ const BookshelfView: React.FC<BookshelfViewProps> = ({ exams, onDownload, onFavo
               </div>
 
               {/* Popularity indicator */}
-              {exam.downloads > 150 && (
+              {exam.downloads > 500 && (
                 <div className="absolute -top-2 -right-2 z-10">
                   <div className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs px-3 py-1 rounded-full shadow-lg flex items-center space-x-1 animate-bounce">
                     <TrendingUp className="h-3 w-3" />
