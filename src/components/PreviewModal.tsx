@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle, Loader2, ChevronLeft, ChevronRight, RotateCcw, Minimize2, Search, BookOpen, Home, RefreshCw, Settings, Info, Share2, Print, Copy, ExternalLink } from 'lucide-react';
 import { Exam } from '../types';
 
 interface PreviewModalProps {
@@ -18,7 +18,19 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [error, setError] = useState<string>('');
   const [totalPages, setTotalPages] = useState(1);
-  const [iframeKey, setIframeKey] = useState(0); // Pour forcer le rechargement de l'iframe
+  const [iframeKey, setIframeKey] = useState(0);
+  const [showPageInput, setShowPageInput] = useState(false);
+  const [pageInputValue, setPageInputValue] = useState('');
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showInfo, setShowInfo] = useState(false);
+  const [fitMode, setFitMode] = useState<'width' | 'height' | 'page' | 'auto'>('auto');
+  const [showSettings, setShowSettings] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const pageInputRef = useRef<HTMLInputElement>(null);
 
   // Charger le document réel
   useEffect(() => {
@@ -27,20 +39,20 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
       setError('');
       
       try {
-        // Si c'est un document téléversé récemment avec fileData
         if (exam.fileData) {
           console.log('📄 Chargement du fichier téléversé:', exam.fileData.name);
           const url = URL.createObjectURL(exam.fileData);
           setDocumentUrl(url);
-          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
+          
+          // Estimer le nombre de pages basé sur la taille du fichier
+          const estimatedPages = Math.max(1, Math.floor(exam.fileSize / 0.3) + 1);
+          setTotalPages(estimatedPages);
         } 
-        // Si c'est un document existant avec documentUrl
         else if (exam.documentUrl) {
           console.log('🔗 Chargement du document existant:', exam.documentUrl);
           setDocumentUrl(exam.documentUrl);
-          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
+          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
         }
-        // Sinon, récupérer depuis le serveur/stockage
         else {
           console.log('🌐 Récupération du document depuis le serveur pour:', exam.id);
           const documentData = await fetchDocumentFromServer(exam.id);
@@ -49,7 +61,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
             const blob = new Blob([documentData], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             setDocumentUrl(url);
-            setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.5) + 1));
+            setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
           } else {
             throw new Error('Document non trouvé sur le serveur');
           }
@@ -65,7 +77,6 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
 
     loadRealDocument();
 
-    // Nettoyer l'URL lors du démontage
     return () => {
       if (documentUrl) {
         URL.revokeObjectURL(documentUrl);
@@ -73,20 +84,80 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
     };
   }, [exam.id, exam.fileData, exam.documentUrl]);
 
-  // Fonction pour récupérer le document depuis le serveur
+  // Focus sur l'input de page quand il s'affiche
+  useEffect(() => {
+    if (showPageInput && pageInputRef.current) {
+      pageInputRef.current.focus();
+      pageInputRef.current.select();
+    }
+  }, [showPageInput]);
+
+  // Gestion des raccourcis clavier
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          goToPreviousPage();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          goToNextPage();
+          break;
+        case 'Home':
+          e.preventDefault();
+          setCurrentPage(1);
+          break;
+        case 'End':
+          e.preventDefault();
+          setCurrentPage(totalPages);
+          break;
+        case '+':
+        case '=':
+          e.preventDefault();
+          handleZoomIn();
+          break;
+        case '-':
+          e.preventDefault();
+          handleZoomOut();
+          break;
+        case 'r':
+          e.preventDefault();
+          handleRotate();
+          break;
+        case 'f':
+          e.preventDefault();
+          setIsFullscreen(!isFullscreen);
+          break;
+        case 'Escape':
+          if (isFullscreen) {
+            setIsFullscreen(false);
+          } else {
+            onClose();
+          }
+          break;
+        case 'g':
+          e.preventDefault();
+          setShowPageInput(true);
+          setPageInputValue(currentPage.toString());
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [currentPage, totalPages, isFullscreen, zoom]);
+
   const fetchDocumentFromServer = async (examId: string): Promise<ArrayBuffer | null> => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // En production, ceci ferait un appel API réel:
-    // const response = await fetch(`/api/documents/${examId}`);
-    // if (!response.ok) throw new Error('Document non trouvé');
-    // return await response.arrayBuffer();
-    
-    console.log('🔧 Génération d\'un document mock pour:', examId);
-    return generateMockDocument(examId);
+    console.log('🔧 Génération d\'un document mock simple pour:', examId);
+    return generateSimpleMockDocument(examId);
   };
 
-  const generateMockDocument = (examId: string): ArrayBuffer => {
+  const generateSimpleMockDocument = (examId: string): ArrayBuffer => {
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -112,7 +183,6 @@ endobj
 /Resources <<
 /Font <<
 /F1 5 0 R
-/F2 6 0 R
 >>
 >>
 >>
@@ -120,20 +190,17 @@ endobj
 
 4 0 obj
 <<
-/Length 400
+/Length 200
 >>
 stream
 BT
-/F1 16 Tf
+/F1 14 Tf
 50 750 Td
-(DOCUMENT D'EXAMEN - ${examId}) Tj
-0 -40 Td
-/F2 12 Tf
-(Ceci est un document d'exemple pour la demonstration.) Tj
-0 -20 Td
-(Le contenu reel du fichier televerse apparaitrait ici.) Tj
-0 -40 Td
-(En production, ce sera le vrai contenu PDF.) Tj
+(Document d'examen - ${examId}) Tj
+0 -30 Td
+(Contenu du document original ici...) Tj
+0 -30 Td
+(En production, ce sera le vrai PDF.) Tj
 ET
 endstream
 endobj
@@ -142,34 +209,25 @@ endobj
 <<
 /Type /Font
 /Subtype /Type1
-/BaseFont /Helvetica-Bold
->>
-endobj
-
-6 0 obj
-<<
-/Type /Font
-/Subtype /Type1
 /BaseFont /Helvetica
 >>
 endobj
 
 xref
-0 7
+0 6
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
 0000000274 00000 n 
-0000000725 00000 n 
-0000000784 00000 n 
+0000000525 00000 n 
 trailer
 <<
-/Size 7
+/Size 6
 /Root 1 0 R
 >>
 startxref
-840
+582
 %%EOF`;
 
     const encoder = new TextEncoder();
@@ -202,23 +260,93 @@ startxref
     return colors[matiere as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
+  // Navigation des pages
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+      setIframeKey(prev => prev + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+      setIframeKey(prev => prev + 1);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setIframeKey(prev => prev + 1);
+    }
+  };
+
+  const goToFirstPage = () => {
+    setCurrentPage(1);
+    setIframeKey(prev => prev + 1);
+  };
+
+  const goToLastPage = () => {
+    setCurrentPage(totalPages);
+    setIframeKey(prev => prev + 1);
+  };
+
+  // Contrôles de zoom
   const handleZoomIn = () => {
-    const newZoom = Math.min(zoom + 0.25, 3.0);
+    const newZoom = Math.min(zoom + 0.25, 5.0);
     setZoom(newZoom);
-    setIframeKey(prev => prev + 1); // Force iframe reload
+    setIframeKey(prev => prev + 1);
   };
 
   const handleZoomOut = () => {
-    const newZoom = Math.max(zoom - 0.25, 0.5);
+    const newZoom = Math.max(zoom - 0.25, 0.25);
     setZoom(newZoom);
-    setIframeKey(prev => prev + 1); // Force iframe reload
+    setIframeKey(prev => prev + 1);
   };
 
+  const setZoomLevel = (level: number) => {
+    setZoom(level);
+    setIframeKey(prev => prev + 1);
+  };
+
+  // Contrôles de rotation
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360);
-    setIframeKey(prev => prev + 1); // Force iframe reload
+    setIframeKey(prev => prev + 1);
   };
 
+  const handleRotateCounterClockwise = () => {
+    setRotation(prev => (prev - 90 + 360) % 360);
+    setIframeKey(prev => prev + 1);
+  };
+
+  const resetRotation = () => {
+    setRotation(0);
+    setIframeKey(prev => prev + 1);
+  };
+
+  // Modes d'ajustement
+  const handleFitMode = (mode: typeof fitMode) => {
+    setFitMode(mode);
+    switch (mode) {
+      case 'width':
+        setZoom(1.0);
+        break;
+      case 'height':
+        setZoom(1.2);
+        break;
+      case 'page':
+        setZoom(0.8);
+        break;
+      case 'auto':
+        setZoom(1.0);
+        break;
+    }
+    setIframeKey(prev => prev + 1);
+  };
+
+  // Téléchargement
   const handleDownloadClick = () => {
     if (documentUrl) {
       const link = document.createElement('a');
@@ -234,95 +362,412 @@ startxref
     }
   };
 
-  // Construire l'URL avec les paramètres de zoom et rotation
+  // Partage
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: exam.title,
+          text: exam.description,
+          url: window.location.href
+        });
+      } catch (error) {
+        console.log('Partage annulé');
+      }
+    } else {
+      // Fallback: copier le lien
+      navigator.clipboard.writeText(window.location.href);
+      alert('Lien copié dans le presse-papiers !');
+    }
+  };
+
+  // Impression
+  const handlePrint = () => {
+    if (iframeRef.current) {
+      iframeRef.current.contentWindow?.print();
+    }
+  };
+
+  // Actualisation
+  const handleRefresh = () => {
+    setIframeKey(prev => prev + 1);
+  };
+
+  // Gestion de l'input de page
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const page = parseInt(pageInputValue);
+    if (page >= 1 && page <= totalPages) {
+      goToPage(page);
+    }
+    setShowPageInput(false);
+  };
+
+  // Recherche dans le document
+  const handleSearch = () => {
+    if (searchTerm && iframeRef.current) {
+      // En production, utiliser l'API de recherche PDF
+      console.log('Recherche:', searchTerm);
+    }
+  };
+
+  // Construire l'URL du PDF avec tous les paramètres
   const buildPdfUrl = () => {
     if (!documentUrl) return '';
     
     const params = new URLSearchParams();
     params.set('page', currentPage.toString());
-    params.set('zoom', (zoom * 100).toString()); // Convertir en pourcentage
     
-    // Pour la rotation, on utilise un paramètre personnalisé
+    // Zoom en pourcentage
+    const zoomPercent = Math.round(zoom * 100);
+    params.set('zoom', zoomPercent.toString());
+    
+    // Mode d'ajustement
+    if (fitMode !== 'auto') {
+      params.set('view', `Fit${fitMode.charAt(0).toUpperCase() + fitMode.slice(1)}`);
+    }
+    
+    // Rotation
     if (rotation !== 0) {
       params.set('rotate', rotation.toString());
+    }
+    
+    // Recherche
+    if (searchTerm) {
+      params.set('search', searchTerm);
     }
     
     return `${documentUrl}#${params.toString()}`;
   };
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 ${isFullscreen ? 'p-0' : ''}`}>
-      <div className={`bg-white rounded-xl shadow-2xl overflow-hidden ${isFullscreen ? 'w-full h-full rounded-none' : 'max-w-7xl w-full max-h-[95vh]'}`}>
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-red-50">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isFullscreen ? 'p-0' : 'p-4'}`}>
+      <div className={`bg-white rounded-xl shadow-2xl overflow-hidden ${isFullscreen ? 'w-full h-full rounded-none' : 'max-w-7xl w-full max-h-[95vh]'} ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        
+        {/* Header avec contrôles avancés */}
+        <div className={`flex justify-between items-center p-4 border-b ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gradient-to-r from-blue-50 to-red-50'}`}>
           <div className="flex items-center space-x-3">
             <FileText className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Prévisualisation</h2>
-              <p className="text-sm text-gray-600">{exam.fileName}</p>
+              <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Prévisualisation avancée
+              </h2>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                {exam.fileName}
+              </p>
               {exam.fileData && (
                 <p className="text-xs text-green-600">📄 Document téléversé récemment</p>
               )}
             </div>
           </div>
           
-          {/* Contrôles de prévisualisation */}
+          {/* Barre d'outils principale */}
           <div className="flex items-center space-x-2">
-            <button
-              onClick={handleZoomOut}
-              disabled={isLoadingContent || zoom <= 0.5}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              title="Zoom arrière"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <span className="text-sm font-medium px-2 min-w-[60px] text-center">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={handleZoomIn}
-              disabled={isLoadingContent || zoom >= 3.0}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              title="Zoom avant"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleRotate}
-              disabled={isLoadingContent}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              title="Rotation"
-            >
-              <RotateCw className="h-4 w-4" />
-            </button>
+            {/* Navigation des pages */}
+            <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-2 py-1">
+              <button
+                onClick={goToFirstPage}
+                disabled={isLoadingContent || currentPage === 1}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Première page (Home)"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 -ml-2" />
+              </button>
+              
+              <button
+                onClick={goToPreviousPage}
+                disabled={isLoadingContent || currentPage === 1}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Page précédente (←)"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              
+              {/* Input de page */}
+              {showPageInput ? (
+                <form onSubmit={handlePageInputSubmit} className="flex items-center">
+                  <input
+                    ref={pageInputRef}
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={pageInputValue}
+                    onChange={(e) => setPageInputValue(e.target.value)}
+                    onBlur={() => setShowPageInput(false)}
+                    className="w-12 px-1 py-0.5 text-center text-sm border border-gray-300 rounded"
+                  />
+                </form>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowPageInput(true);
+                    setPageInputValue(currentPage.toString());
+                  }}
+                  className="px-2 py-1 text-sm font-medium hover:bg-gray-100 rounded"
+                  title="Aller à la page (G)"
+                >
+                  {currentPage}
+                </button>
+              )}
+              
+              <span className="text-sm text-gray-500">/ {totalPages}</span>
+              
+              <button
+                onClick={goToNextPage}
+                disabled={isLoadingContent || currentPage === totalPages}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Page suivante (→)"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              
+              <button
+                onClick={goToLastPage}
+                disabled={isLoadingContent || currentPage === totalPages}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Dernière page (End)"
+              >
+                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 -ml-2" />
+              </button>
+            </div>
+
+            {/* Contrôles de zoom */}
+            <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-2 py-1">
+              <button
+                onClick={handleZoomOut}
+                disabled={isLoadingContent || zoom <= 0.25}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Zoom arrière (-)"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </button>
+              
+              <select
+                value={zoom}
+                onChange={(e) => setZoomLevel(parseFloat(e.target.value))}
+                className="text-sm border-0 bg-transparent focus:outline-none"
+                disabled={isLoadingContent}
+              >
+                <option value={0.25}>25%</option>
+                <option value={0.5}>50%</option>
+                <option value={0.75}>75%</option>
+                <option value={1.0}>100%</option>
+                <option value={1.25}>125%</option>
+                <option value={1.5}>150%</option>
+                <option value={2.0}>200%</option>
+                <option value={3.0}>300%</option>
+                <option value={5.0}>500%</option>
+              </select>
+              
+              <button
+                onClick={handleZoomIn}
+                disabled={isLoadingContent || zoom >= 5.0}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Zoom avant (+)"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modes d'ajustement */}
+            <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-2 py-1">
+              <select
+                value={fitMode}
+                onChange={(e) => handleFitMode(e.target.value as typeof fitMode)}
+                className="text-sm border-0 bg-transparent focus:outline-none"
+                disabled={isLoadingContent}
+              >
+                <option value="auto">Automatique</option>
+                <option value="width">Ajuster largeur</option>
+                <option value="height">Ajuster hauteur</option>
+                <option value="page">Page entière</option>
+              </select>
+            </div>
+
+            {/* Rotation */}
+            <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-1 py-1">
+              <button
+                onClick={handleRotateCounterClockwise}
+                disabled={isLoadingContent}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Rotation anti-horaire"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+              
+              <button
+                onClick={handleRotate}
+                disabled={isLoadingContent}
+                className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                title="Rotation horaire (R)"
+              >
+                <RotateCw className="h-4 w-4" />
+              </button>
+              
+              {rotation !== 0 && (
+                <button
+                  onClick={resetRotation}
+                  disabled={isLoadingContent}
+                  className="p-1 hover:bg-gray-100 rounded disabled:opacity-50 text-xs"
+                  title="Réinitialiser rotation"
+                >
+                  {rotation}°
+                </button>
+              )}
+            </div>
+
+            {/* Recherche */}
+            <div className="flex items-center space-x-1">
+              {isSearchMode ? (
+                <div className="flex items-center bg-white rounded-lg border border-gray-300 px-2 py-1">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Rechercher..."
+                    className="w-32 text-sm border-0 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsSearchMode(false);
+                      setSearchTerm('');
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsSearchMode(true)}
+                  disabled={isLoadingContent}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                  title="Rechercher dans le document"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={handleRefresh}
+                disabled={isLoadingContent}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                title="Actualiser"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              
+              <button
+                onClick={handlePrint}
+                disabled={isLoadingContent || !documentUrl}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                title="Imprimer"
+              >
+                <Print className="h-4 w-4" />
+              </button>
+              
+              <button
+                onClick={handleShare}
+                disabled={isLoadingContent}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                title="Partager"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+              
+              <button
+                onClick={() => setShowInfo(!showInfo)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Informations"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+              
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Paramètres"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Plein écran */}
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
               disabled={isLoadingContent}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              title="Plein écran"
+              title={isFullscreen ? "Quitter plein écran (F)" : "Plein écran (F)"}
             >
-              <Maximize2 className="h-4 w-4" />
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </button>
+            
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Fermer (Échap)"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
+        {/* Panneau des paramètres */}
+        {showSettings && (
+          <div className="border-b border-gray-200 bg-gray-50 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="darkMode"
+                  checked={darkMode}
+                  onChange={(e) => setDarkMode(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="darkMode" className="text-sm">Mode sombre</label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="autoRotate"
+                  checked={autoRotate}
+                  onChange={(e) => setAutoRotate(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="autoRotate" className="text-sm">Rotation automatique</label>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Raccourcis: ←→ (pages), +- (zoom), R (rotation), F (plein écran), G (aller à)
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex h-[calc(95vh-80px)]">
           {/* Sidebar avec informations */}
-          {!isFullscreen && (
-            <div className="w-80 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto">
+          {!isFullscreen && (showInfo || !isLoadingContent) && (
+            <div className={`w-80 border-r ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} p-6 overflow-y-auto`}>
               <div className="space-y-6">
                 {/* Informations du document */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     {exam.title}
                   </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                  <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     {exam.description}
                   </p>
 
@@ -339,34 +784,34 @@ startxref
 
                 {/* Métadonnées */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700">Informations</h4>
+                  <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Informations</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center">
                       <User className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-gray-600">Auteur :</span>
-                      <span className="ml-1 font-medium">{exam.uploader.name}</span>
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Auteur :</span>
+                      <span className={`ml-1 font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{exam.uploader.name}</span>
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-gray-600">Date :</span>
-                      <span className="ml-1">{formatDate(exam.uploadDate)}</span>
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Date :</span>
+                      <span className={`ml-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{formatDate(exam.uploadDate)}</span>
                     </div>
                     <div className="flex items-center">
                       <FileText className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-gray-600">Taille :</span>
-                      <span className="ml-1">{Math.round(exam.fileSize * 10) / 10} MB</span>
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Taille :</span>
+                      <span className={`ml-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{Math.round(exam.fileSize * 10) / 10} MB</span>
                     </div>
                     <div className="flex items-center">
                       <Download className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-gray-600">Téléchargements :</span>
-                      <span className="ml-1">{exam.downloads}</span>
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Téléchargements :</span>
+                      <span className={`ml-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{exam.downloads}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Statut du document */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700">Statut</h4>
+                  <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Statut</h4>
                   <div className="text-sm">
                     {exam.fileData ? (
                       <div className="flex items-center p-2 bg-green-50 rounded-lg">
@@ -382,68 +827,26 @@ startxref
                   </div>
                 </div>
 
-                {/* Contrôles de zoom détaillés */}
+                {/* Informations de visualisation */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700">Zoom</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Niveau actuel:</span>
-                      <span className="text-sm font-medium">{Math.round(zoom * 100)}%</span>
+                  <h4 className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Visualisation</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Page actuelle:</span>
+                      <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{currentPage} / {totalPages}</span>
                     </div>
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => { setZoom(0.5); setIframeKey(prev => prev + 1); }}
-                        disabled={isLoadingContent}
-                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
-                      >
-                        50%
-                      </button>
-                      <button
-                        onClick={() => { setZoom(1.0); setIframeKey(prev => prev + 1); }}
-                        disabled={isLoadingContent}
-                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
-                      >
-                        100%
-                      </button>
-                      <button
-                        onClick={() => { setZoom(1.5); setIframeKey(prev => prev + 1); }}
-                        disabled={isLoadingContent}
-                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
-                      >
-                        150%
-                      </button>
-                      <button
-                        onClick={() => { setZoom(2.0); setIframeKey(prev => prev + 1); }}
-                        disabled={isLoadingContent}
-                        className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
-                      >
-                        200%
-                      </button>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Zoom:</span>
+                      <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{Math.round(zoom * 100)}%</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Navigation des pages */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700">Navigation</h4>
-                  <div className="flex items-center justify-between">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1 || isLoadingContent}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
-                    >
-                      Précédent
-                    </button>
-                    <span className="text-sm font-medium">
-                      Page {currentPage} sur {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages || isLoadingContent}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
-                    >
-                      Suivant
-                    </button>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Rotation:</span>
+                      <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{rotation}°</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Mode:</span>
+                      <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{fitMode}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -478,13 +881,13 @@ startxref
           )}
 
           {/* Visionneuse de document */}
-          <div className="flex-1 bg-gray-100 flex items-center justify-center overflow-hidden">
+          <div className={`flex-1 flex items-center justify-center overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
             {isLoadingContent ? (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                   <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
-                  <p className="text-gray-600">Chargement du document...</p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Chargement du document...</p>
+                  <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {exam.fileData ? 'Traitement du fichier téléversé' : 'Récupération du contenu'}
                   </p>
                 </div>
@@ -493,8 +896,8 @@ startxref
               <div className="flex items-center justify-center h-96">
                 <div className="text-center max-w-md">
                   <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur de chargement</h3>
-                  <p className="text-gray-600 mb-4">{error}</p>
+                  <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Erreur de chargement</h3>
+                  <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{error}</p>
                   <button
                     onClick={() => window.location.reload()}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -506,21 +909,21 @@ startxref
             ) : documentUrl ? (
               <div className="w-full h-full relative">
                 <iframe
-                  key={iframeKey} // Force le rechargement quand les paramètres changent
+                  ref={iframeRef}
+                  key={iframeKey}
                   src={buildPdfUrl()}
                   className="w-full h-full border-0"
-                  style={{
-                    transform: rotation !== 0 ? `rotate(${rotation}deg)` : 'none',
-                    transformOrigin: 'center'
-                  }}
                   title={`Prévisualisation de ${exam.title}`}
+                  style={{
+                    filter: darkMode ? 'invert(1) hue-rotate(180deg)' : 'none'
+                  }}
                 />
               </div>
             ) : (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                   <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Document non disponible</p>
+                  <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Document non disponible</p>
                 </div>
               </div>
             )}
@@ -532,24 +935,31 @@ startxref
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg border border-gray-200 px-4 py-2">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                onClick={goToPreviousPage}
                 disabled={currentPage === 1}
                 className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
               >
                 ←
               </button>
+              
               <span className="text-sm font-medium">
                 {currentPage} / {totalPages}
               </span>
+              
               <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                onClick={goToNextPage}
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
               >
                 →
               </button>
+              
               <div className="w-px h-6 bg-gray-300"></div>
+              
               <span className="text-xs text-gray-600">{Math.round(zoom * 100)}%</span>
+              
+              <div className="w-px h-6 bg-gray-300"></div>
+              
               <button
                 onClick={handleDownloadClick}
                 className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
