@@ -1,4 +1,5 @@
 import { Exam } from '../types';
+import { customDataStorage } from '../utils/storage';
 
 export const mockExams: Exam[] = [
   {
@@ -343,55 +344,47 @@ export const mockExams: Exam[] = [
 ];
 
 // Classes et matières modifiables
-export let classes = [
+const defaultClasses = [
   'Sixième', 'Cinquième', 'Quatrième', 'Troisième',
   'Seconde', 'Première', 'Terminale'
 ];
 
-export let matieres = [
+const defaultMatieres = [
   'Mathématiques', 'Français', 'Histoire-Géographie', 'SVT',
   'Physique-Chimie', 'Anglais', 'Espagnol', 'Allemand',
   'Philosophie', 'Économie', 'Arts Plastiques', 'Musique'
 ];
 
+// Charger les classes et matières depuis le stockage
+export let classes = customDataStorage.loadClasses(defaultClasses);
+export let matieres = customDataStorage.loadMatieres(defaultMatieres);
 // Fonctions pour gérer les classes et matières
 export const addCustomClasse = (classe: string) => {
   if (!classes.includes(classe)) {
     classes.push(classe);
-    localStorage.setItem('egzamachiv_classes', JSON.stringify(classes));
+    customDataStorage.saveClasses(classes);
   }
 };
 
 export const addCustomMatiere = (matiere: string) => {
   if (!matieres.includes(matiere)) {
     matieres.push(matiere);
-    localStorage.setItem('egzamachiv_matieres', JSON.stringify(matieres));
+    customDataStorage.saveMatieres(matieres);
   }
 };
 
 export const removeCustomClasse = (classe: string) => {
   classes = classes.filter(c => c !== classe);
-  localStorage.setItem('egzamachiv_classes', JSON.stringify(classes));
+  customDataStorage.saveClasses(classes);
 };
 
 export const removeCustomMatiere = (matiere: string) => {
   matieres = matieres.filter(m => m !== matiere);
-  localStorage.setItem('egzamachiv_matieres', JSON.stringify(matieres));
+  customDataStorage.saveMatieres(matieres);
 };
 
-// Charger les données personnalisées au démarrage
-export const loadCustomData = () => {
-  const savedClasses = localStorage.getItem('egzamachiv_classes');
-  const savedMatieres = localStorage.getItem('egzamachiv_matieres');
-  
-  if (savedClasses) {
-    classes = JSON.parse(savedClasses);
-  }
-  
-  if (savedMatieres) {
-    matieres = JSON.parse(savedMatieres);
-  }
+// Recharger les données personnalisées
+export const reloadCustomData = () => {
+  classes = customDataStorage.loadClasses(defaultClasses);
+  matieres = customDataStorage.loadMatieres(defaultMatieres);
 };
-
-// Initialiser les données personnalisées
-loadCustomData();

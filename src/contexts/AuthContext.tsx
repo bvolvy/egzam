@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
+import { storage, STORAGE_KEYS } from '../utils/storage';
 
 interface AuthContextType {
   user: User | null;
@@ -40,13 +41,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for existing session
-    const savedUser = localStorage.getItem('egzamachiv_user');
+    // Vérifier s'il y a une session existante
+    const savedUser = storage.get<User | null>(STORAGE_KEYS.USER, null);
     if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
       // Convert joinDate back to Date object
-      parsedUser.joinDate = new Date(parsedUser.joinDate);
-      setUser(parsedUser);
+      savedUser.joinDate = new Date(savedUser.joinDate);
+      setUser(savedUser);
     }
     setIsLoading(false);
   }, []);
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const foundUser = mockUsers.find(u => u.email === email);
     if (foundUser && password === 'password') {
       setUser(foundUser);
-      localStorage.setItem('egzamachiv_user', JSON.stringify(foundUser));
+      storage.set(STORAGE_KEYS.USER, foundUser);
       setIsLoading(false);
       return true;
     }
@@ -83,14 +83,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     
     setUser(newUser);
-    localStorage.setItem('egzamachiv_user', JSON.stringify(newUser));
+    storage.set(STORAGE_KEYS.USER, newUser);
     setIsLoading(false);
     return true;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('egzamachiv_user');
+    storage.remove(STORAGE_KEYS.USER);
   };
 
   return (

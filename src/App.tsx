@@ -10,9 +10,10 @@ import PreviewModal from './components/PreviewModal';
 import Footer from './components/Footer';
 import { mockExams } from './data/mockData';
 import { Exam, FilterOptions } from './types';
+import { examStorage, favoritesStorage, initializeStorage, cleanupStorage } from './utils/storage';
 
 function App() {
-  const [exams, setExams] = useState<Exam[]>(mockExams);
+  const [exams, setExams] = useState<Exam[]>([]);
   const [filteredExams, setFilteredExams] = useState<Exam[]>(mockExams);
   const [searchResults, setSearchResults] = useState<Exam[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -28,7 +29,57 @@ function App() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewExam, setPreviewExam] = useState<Exam | null>(null);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialisation des données au démarrage
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Initialiser le stockage
+        const { isFirstVisit } = initializeStorage();
+        
+        // Charger les examens depuis le stockage ou utiliser les mocks
+        const storedExams = examStorage.load();
+        const initialExams = storedExams.length > 0 ? storedExams : mockExams;
+        
+        // Charger les favoris
+        const storedFavorites = favoritesStorage.load();
+        
+        // Appliquer les favoris aux examens
+        const examsWithFavorites = initialExams.map(exam => ({
+          ...exam,
+          isFavorited: storedFavorites.includes(exam.id)
+        }));
+        
+        setExams(examsWithFavorites);
+        
+        // Si c'est la première visite, sauvegarder les examens mock
+        if (isFirstVisit && storedExams.length === 0) {
+          examStorage.save(examsWithFavorites);
+        }
+        
+        // Nettoyer les données anciennes
+        cleanupStorage(30);
+        
+        setIsInitialized(true);
+        console.log('✅ Application initialisée avec succès');
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'initialisation:', error);
+        // En cas d'erreur, utiliser les données mock
+        setExams(mockExams);
+        setIsInitialized(true);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Sauvegarder automatiquement les examens quand ils changent
+  useEffect(() => {
+    if (isInitialized && exams.length > 0) {
+      examStorage.save(exams);
+    }
+  }, [exams, isInitialized]);
   // Filter and sort exams
   useEffect(() => {
     let filtered = [...exams];
@@ -105,26 +156,43 @@ function App() {
 
   const handleDownload = (examId: string) => {
     // Simulate download
-    setExams(prev => prev.map(exam => 
-      exam.id === examId 
-        ? { ...exam, downloads: exam.downloads + 1 }
-        : exam
-    ));
+    setExams(prev => {
+      const updated = prev.map(exam => 
+        exam.id === examId 
+          ? { ...exam, downloads: exam.downloads + 1 }
+          : exam
+      );
+      return updated;
+    });
     
     // Show success message
     alert('Téléchargement démarré !');
   };
 
   const handleFavorite = (examId: string) => {
-    setExams(prev => prev.map(exam => 
-      exam.id === examId 
-        ? { 
-            ...exam, 
-            isFavorited: !exam.isFavorited,
-            favorites: exam.isFavorited ? exam.favorites - 1 : exam.favorites + 1
-          }
-        : exam
-    ));
+    setExams(prev => {
+      const updated = prev.map(exam => 
+        exam.id === examId 
+          ? { 
+              ...exam, 
+              isFavorited: !exam.isFavorited,
+              favorites: exam.isFavorited ? exam.favorites - 1 : exam.favorites + 1
+            }
+          : exam
+      );
+      
+      // Mettre à jour les favoris dans le stockage
+      const exam = updated.find(e => e.id === examId);
+      if (exam) {
+        if (exam.isFavorited) {
+          favoritesStorage.add(examId);
+        } else {
+          favoritesStorage.remove(examId);
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const handlePreview = (examId: string) => {
@@ -153,11 +221,26 @@ function App() {
       documentUrl: examData.documentUrl // URL du document si disponible
     };
 
-    setExams(prev => [newExam, ...prev]);
+    setExams(prev => {
+      const updated = [newExam, ...prev];
+      return updated;
+    });
+    
     setShowUploadModal(false);
     alert('Examen téléversé avec succès ! Le contenu réel sera visible dans la prévisualisation.');
   };
 
+  // Afficher un loader pendant l'initialisation
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-red-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement d'EgzamAchiv...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <AuthProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-red-50/30 flex flex-col">

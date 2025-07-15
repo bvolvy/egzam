@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, Heart } from 'lucide-react';
 import PrivacyTermsPage from './PrivacyTermsPage';
+import FAQPage from './FAQPage';
 
 // Composant Logo pour le footer (version plus petite)
 const HaitiLogoSmall: React.FC = () => (
@@ -16,6 +17,7 @@ const HaitiLogoSmall: React.FC = () => (
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const [showPrivacyTerms, setShowPrivacyTerms] = useState(false);
+  const [showFAQ, setShowFAQ] = useState(false);
 
   return (
     <>
@@ -49,7 +51,7 @@ const Footer: React.FC = () => {
                 Conditions d'utilisation
               </button>
               <a 
-                href="#" 
+                onClick={() => setShowFAQ(true)}
                 className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
               >
                 FAQ
@@ -69,6 +71,11 @@ const Footer: React.FC = () => {
       {/* Privacy & Terms Modal */}
       {showPrivacyTerms && (
         <PrivacyTermsPage onClose={() => setShowPrivacyTerms(false)} />
+      )}
+
+      {/* FAQ Modal */}
+      {showFAQ && (
+        <FAQPage onClose={() => setShowFAQ(false)} />
       )}
     </>
   );
