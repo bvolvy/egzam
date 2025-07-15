@@ -196,8 +196,8 @@ const BookshelfView: React.FC<BookshelfViewProps> = ({ exams, onDownload, onFavo
                 <div className="h-8 w-px bg-gray-300"></div>
                 
                 <div className="text-right">
-                  <div className="text-sm text-gray-500">Mise à jour</div>
-                  <div className="text-sm font-medium text-gray-700">Il y a quelques minutes</div>
+                  <div className="text-sm text-gray-500">Haïti</div>
+                  <div className="text-sm font-medium text-gray-700">La Perle des Antilles</div>
                 </div>
               </div>
             </div>
