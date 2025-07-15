@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle, Loader2, ChevronLeft, ChevronRight, RotateCcw, Minimize2, Search, BookOpen, Home, RefreshCw, Settings, Info, Share2, Print, Copy, ExternalLink } from 'lucide-react';
+import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle, Loader2, ChevronLeft, ChevronRight, RotateCcw, Minimize2, Search, BookOpen, Home, RefreshCw, Settings, Info, Share2, Printer as Print, Copy, ExternalLink } from 'lucide-react';
 import { Exam } from '../types';
 
 interface PreviewModalProps {
