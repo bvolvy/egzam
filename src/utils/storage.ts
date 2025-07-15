@@ -70,7 +70,15 @@ export const examStorage = {
   },
 
   load: (defaultExams: any[] = []) => {
-    return storage.get(STORAGE_KEYS.EXAMS, defaultExams);
+    const exams = storage.get(STORAGE_KEYS.EXAMS, defaultExams);
+    // Convertir les dates string en objets Date après récupération du localStorage
+    return exams.map((exam: any) => ({
+      ...exam,
+      uploadDate: exam.uploadDate ? new Date(exam.uploadDate) : new Date(),
+      // Convertir aussi d'autres dates si elles existent
+      createdAt: exam.createdAt ? new Date(exam.createdAt) : undefined,
+      updatedAt: exam.updatedAt ? new Date(exam.updatedAt) : undefined
+    }));
   },
 
   addExam: (exam: any) => {
