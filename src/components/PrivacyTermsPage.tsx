@@ -103,24 +103,7 @@ const PrivacyTermsPage: React.FC<PrivacyTermsPageProps> = ({ onClose }) => {
                     </ul>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">Données techniques</h3>
-                    <ul className="space-y-1 text-gray-700 text-sm">
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        Adresse IP pour la sécurité
-                      </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        Type de navigateur et appareil
-                      </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        Historique de navigation sur le site
-                      </li>
-                    </ul>
-                  </div>
-
+                  
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-2">Fichiers téléversés</h3>
                     <ul className="space-y-1 text-gray-700 text-sm">
