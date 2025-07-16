@@ -177,7 +177,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                 accept=".pdf"
                 onChange={handleChange}
                 accept=".pdf"
-                placeholder="Ex: Devoir de Mathématiques - Fonctions"
+                placeholder="Ex: Examen de Mathématiques - Fonctions"
                 required
               />
             </div>
