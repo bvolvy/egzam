@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { storage, STORAGE_KEYS } from '../utils/storage';
+import { storage, STORAGE_KEYS, userStatsStorage } from '../utils/storage';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
+  updateUserStats: (action: 'upload' | 'download' | 'favorite') => void;
   isLoading: boolean;
 }
 
@@ -46,6 +48,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (savedUser) {
       // Convert joinDate back to Date object
       savedUser.joinDate = new Date(savedUser.joinDate);
+      
+      // Charger les statistiques utilisateur
+      const stats = userStatsStorage.load(savedUser.id);
+      const updatedUser = {
+        ...savedUser,
+        uploads: stats.uploads,
+        downloads: stats.downloads,
+        favorites: stats.favorites
+      };
+      
       setUser(savedUser);
     }
     setIsLoading(false);
@@ -58,8 +70,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const foundUser = mockUsers.find(u => u.email === email);
     if (foundUser && password === 'password') {
-      setUser(foundUser);
-      storage.set(STORAGE_KEYS.USER, foundUser);
+      // Charger les statistiques utilisateur
+      const stats = userStatsStorage.load(foundUser.id);
+      const userWithStats = {
+        ...foundUser,
+        uploads: stats.uploads,
+        downloads: stats.downloads,
+        favorites: stats.favorites
+      };
+      
+      setUser(userWithStats);
+      storage.set(STORAGE_KEYS.USER, userWithStats);
       setIsLoading(false);
       return true;
     }
@@ -82,19 +103,60 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       downloads: 0
     };
     
+    // Initialiser les statistiques utilisateur
+    userStatsStorage.init(newUser.id);
+    
     setUser(newUser);
     storage.set(STORAGE_KEYS.USER, newUser);
     setIsLoading(false);
     return true;
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      storage.set(STORAGE_KEYS.USER, updatedUser);
+    }
+  };
+
+  const updateUserStats = (action: 'upload' | 'download' | 'favorite') => {
+    if (user) {
+      const stats = userStatsStorage.load(user.id);
+      
+      switch (action) {
+        case 'upload':
+          stats.uploads += 1;
+          break;
+        case 'download':
+          stats.downloads += 1;
+          break;
+        case 'favorite':
+          stats.favorites += 1;
+          break;
+      }
+      
+      userStatsStorage.save(user.id, stats);
+      
+      // Mettre à jour l'utilisateur en mémoire
+      const updatedUser = {
+        ...user,
+        uploads: stats.uploads,
+        downloads: stats.downloads,
+        favorites: stats.favorites
+      };
+      
+      setUser(updatedUser);
+      storage.set(STORAGE_KEYS.USER, updatedUser);
+    }
+  };
   const logout = () => {
     setUser(null);
     storage.remove(STORAGE_KEYS.USER);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, updateUserStats, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

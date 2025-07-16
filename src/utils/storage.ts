@@ -7,7 +7,8 @@ const STORAGE_KEYS = {
   MATIERES: 'egzamachiv_matieres',
   USER_PREFERENCES: 'egzamachiv_preferences',
   FAVORITES: 'egzamachiv_favorites',
-  UPLOADS: 'egzamachiv_uploads'
+  UPLOADS: 'egzamachiv_uploads',
+  USER_STATS: 'egzamachiv_user_stats'
 } as const;
 
 // Interface pour les préférences utilisateur
@@ -269,6 +270,51 @@ export const uploadsStorage = {
   }
 };
 
+// Fonctions pour les statistiques utilisateur
+export const userStatsStorage = {
+  init: (userId: string) => {
+    const stats = {
+      uploads: 0,
+      downloads: 0,
+      favorites: 0,
+      lastActivity: new Date().toISOString()
+    };
+    storage.set(`${STORAGE_KEYS.USER_STATS}_${userId}`, stats);
+    return stats;
+  },
+
+  load: (userId: string) => {
+    return storage.get(`${STORAGE_KEYS.USER_STATS}_${userId}`, {
+      uploads: 0,
+      downloads: 0,
+      favorites: 0,
+      lastActivity: new Date().toISOString()
+    });
+  },
+
+  save: (userId: string, stats: any) => {
+    const updatedStats = {
+      ...stats,
+      lastActivity: new Date().toISOString()
+    };
+    storage.set(`${STORAGE_KEYS.USER_STATS}_${userId}`, updatedStats);
+    return updatedStats;
+  },
+
+  increment: (userId: string, field: 'uploads' | 'downloads' | 'favorites') => {
+    const stats = userStatsStorage.load(userId);
+    stats[field] += 1;
+    return userStatsStorage.save(userId, stats);
+  },
+
+  decrement: (userId: string, field: 'uploads' | 'downloads' | 'favorites') => {
+    const stats = userStatsStorage.load(userId);
+    if (stats[field] > 0) {
+      stats[field] -= 1;
+    }
+    return userStatsStorage.save(userId, stats);
+  }
+};
 // Hook pour la synchronisation automatique
 export const useAutoSave = (data: any, key: string, delay: number = 1000) => {
   React.useEffect(() => {
