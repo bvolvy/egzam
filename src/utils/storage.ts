@@ -66,7 +66,12 @@ export const storage = {
 // Fonctions spécifiques pour les examens
 export const examStorage = {
   save: (exams: any[]) => {
-    storage.set(STORAGE_KEYS.EXAMS, exams);
+    // Nettoyer les objets File avant la sauvegarde car ils ne peuvent pas être sérialisés
+    const cleanedExams = exams.map(exam => {
+      const { fileData, ...examWithoutFile } = exam;
+      return examWithoutFile;
+    });
+    storage.set(STORAGE_KEYS.EXAMS, cleanedExams);
   },
 
   load: (defaultExams: any[] = []) => {
