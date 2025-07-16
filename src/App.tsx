@@ -30,6 +30,7 @@ function App() {
   const [previewExam, setPreviewExam] = useState<Exam | null>(null);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [pendingExams, setPendingExams] = useState<Exam[]>([]);
 
   // Initialisation des données au démarrage
   useEffect(() => {
@@ -52,6 +53,10 @@ function App() {
         }));
         
         setExams(examsWithFavorites);
+        
+        // Charger les examens en attente
+        const storedPendingExams = pendingExamStorage.load();
+        setPendingExams(storedPendingExams);
         
         // Si c'est la première visite, sauvegarder les examens mock
         if (isFirstVisit && storedExams.length === 0) {
@@ -217,17 +222,59 @@ function App() {
       favorites: 0,
       uploader: { id: '1', name: 'Utilisateur' },
       isFavorited: false,
-      fileData: examData.fileData, // Garder la référence au fichier réel
-      documentUrl: examData.documentUrl // URL du document si disponible
+      status: 'pending',
+      submissionDate: new Date()
     };
 
-    setExams(prev => {
+    // Ajouter aux examens en attente au lieu des examens publiés
+    setPendingExams(prev => {
       const updated = [newExam, ...prev];
+      pendingExamStorage.save(updated);
       return updated;
     });
     
     setShowUploadModal(false);
-    alert('Examen téléversé avec succès ! Le contenu réel sera visible dans la prévisualisation.');
+    alert('Examen soumis avec succès ! Il sera visible après approbation par un administrateur.');
+  };
+
+  // Fonctions de gestion des examens en attente
+  const handleApproveExam = (examId: string) => {
+    const examToApprove = pendingExams.find(exam => exam.id === examId);
+    if (examToApprove) {
+      // Retirer de la liste d'attente
+      const updatedPending = pendingExams.filter(exam => exam.id !== examId);
+      setPendingExams(updatedPending);
+      pendingExamStorage.save(updatedPending);
+      
+      // Ajouter aux examens publiés
+      const approvedExam = {
+        ...examToApprove,
+        status: 'approved',
+        approvalDate: new Date()
+      };
+      
+      setExams(prev => {
+        const updated = [approvedExam, ...prev];
+        examStorage.save(updated);
+        return updated;
+      });
+    }
+  };
+
+  const handleRejectExam = (examId: string) => {
+    const updatedPending = pendingExams.map(exam => 
+      exam.id === examId 
+        ? { ...exam, status: 'rejected', rejectionDate: new Date() }
+        : exam
+    );
+    setPendingExams(updatedPending);
+    pendingExamStorage.save(updatedPending);
+  };
+
+  const handleDeletePendingExam = (examId: string) => {
+    const updatedPending = pendingExams.filter(exam => exam.id !== examId);
+    setPendingExams(updatedPending);
+    pendingExamStorage.save(updatedPending);
   };
 
   // Afficher un loader pendant l'initialisation
@@ -304,6 +351,16 @@ function App() {
         {showAdminPanel && (
           <AdminPanel
             onClose={() => setShowAdminPanel(false)}
+            pendingExams={pendingExams}
+            publishedExams={exams}
+            onApproveExam={handleApproveExam}
+            onRejectExam={handleRejectExam}
+            onDeletePendingExam={handleDeletePendingExam}
+            onDeletePublishedExam={(examId) => {
+              const updated = exams.filter(exam => exam.id !== examId);
+              setExams(updated);
+              examStorage.save(updated);
+            }}
           />
         )}
 

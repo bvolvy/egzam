@@ -110,6 +110,58 @@ export const examStorage = {
   }
 };
 
+// Fonctions pour les examens en attente
+export const pendingExamStorage = {
+  save: (pendingExams: any[]) => {
+    // Nettoyer les objets File avant la sauvegarde
+    const cleanedExams = pendingExams.map(exam => {
+      const { fileData, ...examWithoutFile } = exam;
+      return examWithoutFile;
+    });
+    storage.set('egzamachiv_pending_exams', cleanedExams);
+  },
+
+  load: (defaultExams: any[] = []) => {
+    const exams = storage.get('egzamachiv_pending_exams', defaultExams);
+    return exams.map((exam: any) => ({
+      ...exam,
+      uploadDate: exam.uploadDate ? new Date(exam.uploadDate) : new Date(),
+      submissionDate: exam.submissionDate ? new Date(exam.submissionDate) : new Date(),
+      approvalDate: exam.approvalDate ? new Date(exam.approvalDate) : undefined,
+      rejectionDate: exam.rejectionDate ? new Date(exam.rejectionDate) : undefined
+    }));
+  },
+
+  approve: (examId: string) => {
+    const pending = pendingExamStorage.load();
+    const updated = pending.map((exam: any) => 
+      exam.id === examId 
+        ? { ...exam, status: 'approved', approvalDate: new Date() }
+        : exam
+    );
+    pendingExamStorage.save(updated);
+    return updated;
+  },
+
+  reject: (examId: string, reason?: string) => {
+    const pending = pendingExamStorage.load();
+    const updated = pending.map((exam: any) => 
+      exam.id === examId 
+        ? { ...exam, status: 'rejected', rejectionDate: new Date(), rejectionReason: reason }
+        : exam
+    );
+    pendingExamStorage.save(updated);
+    return updated;
+  },
+
+  remove: (examId: string) => {
+    const pending = pendingExamStorage.load();
+    const updated = pending.filter((exam: any) => exam.id !== examId);
+    pendingExamStorage.save(updated);
+    return updated;
+  }
+};
+
 // Fonctions pour les favoris
 export const favoritesStorage = {
   save: (favorites: string[]) => {

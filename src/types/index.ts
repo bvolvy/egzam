@@ -29,6 +29,11 @@ export interface Exam {
   isFavorited?: boolean;
   fileData?: File; // Référence au fichier réel pour les nouveaux uploads
   documentUrl?: string; // URL du document stocké
+  status?: 'pending' | 'approved' | 'rejected';
+  submissionDate?: Date;
+  approvalDate?: Date;
+  rejectionDate?: Date;
+  rejectionReason?: string;
 }
 
 export interface FilterOptions {

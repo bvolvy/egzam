@@ -18,14 +18,23 @@ const AdminLogo: React.FC = () => (
 );
 interface AdminPanelProps {
   onClose: () => void;
+  pendingExams: Exam[];
+  publishedExams: Exam[];
+  onApproveExam: (examId: string) => void;
+  onRejectExam: (examId: string) => void;
+  onDeletePendingExam: (examId: string) => void;
+  onDeletePublishedExam: (examId: string) => void;
 }
 
-interface PendingExam extends Exam {
-  status: 'pending' | 'approved' | 'rejected';
-  submissionDate: Date;
-}
-
-const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ 
+  onClose, 
+  pendingExams, 
+  publishedExams, 
+  onApproveExam, 
+  onRejectExam, 
+  onDeletePendingExam, 
+  onDeletePublishedExam 
+}) => {
   const [activeTab, setActiveTab] = useState<'users' | 'exams' | 'pending' | 'settings'>('pending');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewExam, setPreviewExam] = useState<Exam | null>(null);
@@ -35,33 +44,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   const [newMatiere, setNewMatiere] = useState('');
   const [editValue, setEditValue] = useState('');
 
-  // Mock data pour les examens en attente
-  const [pendingExams, setPendingExams] = useState<PendingExam[]>([
-    {
-      ...mockExams[0],
-      id: 'pending-1',
-      title: 'Examen de Mathématiques - Algèbre',
-      status: 'pending',
-      submissionDate: new Date('2024-03-20'),
-      uploadDate: new Date('2024-03-20')
-    },
-    {
-      ...mockExams[1],
-      id: 'pending-2',
-      title: 'Test de Physique - Optique',
-      status: 'pending',
-      submissionDate: new Date('2024-03-19'),
-      uploadDate: new Date('2024-03-19')
-    },
-    {
-      ...mockExams[2],
-      id: 'pending-3',
-      title: 'Contrôle de Français - Littérature',
-      status: 'pending',
-      submissionDate: new Date('2024-03-18'),
-      uploadDate: new Date('2024-03-18')
-    }
-  ]);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [examToReject, setExamToReject] = useState<string | null>(null);
 
   // Mock data pour les utilisateurs
   const mockUsers: User[] = [
@@ -113,37 +98,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
   const [users, setUsers] = useState<User[]>(mockUsers);
 
-  const handlePreviewExam = (exam: PendingExam) => {
+  const handlePreviewExam = (exam: Exam) => {
     setPreviewExam(exam);
     setShowPreviewModal(true);
   };
 
-  const handleApproveExam = (examId: string) => {
-    setPendingExams(prev => 
-      prev.map(exam => 
-        exam.id === examId 
-          ? { ...exam, status: 'approved' as const }
-          : exam
-      )
-    );
+  const handleApproveClick = (examId: string) => {
+    onApproveExam(examId);
     alert('Examen approuvé avec succès !');
   };
 
-  const handleRejectExam = (examId: string) => {
-    setPendingExams(prev => 
-      prev.map(exam => 
-        exam.id === examId 
-          ? { ...exam, status: 'rejected' as const }
-          : exam
-      )
-    );
-    alert('Examen rejeté.');
+  const handleRejectClick = (examId: string) => {
+    setExamToReject(examId);
+    setShowRejectionModal(true);
   };
 
-  const handleDeleteExam = (examId: string) => {
+  const confirmReject = () => {
+    if (examToReject) {
+      onRejectExam(examToReject);
+      setShowRejectionModal(false);
+      setExamToReject(null);
+      setRejectionReason('');
+      alert('Examen rejeté.');
+    }
+  };
+
+  const handleDeletePendingClick = (examId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet examen ?')) {
-      setPendingExams(prev => prev.filter(exam => exam.id !== examId));
+      onDeletePendingExam(examId);
       alert('Examen supprimé.');
+    }
+  };
+
+  const handleDeletePublishedClick = (examId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer définitivement cet examen publié ?')) {
+      onDeletePublishedExam(examId);
+      alert('Examen publié supprimé.');
     }
   };
 
@@ -380,7 +370,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                 </div>
 
                 <div className="space-y-4">
-                  {pendingExams.filter(exam => exam.status === 'pending').map(exam => (
+                  {pendingExams.filter(exam => !exam.status || exam.status === 'pending').map(exam => (
                     <div key={exam.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -407,7 +397,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                             </div>
                             <div>
                               <span className="font-medium text-gray-700">Soumis le:</span>
-                              <p className="text-gray-600">{formatDate(exam.submissionDate)}</p>
+                              <p className="text-gray-600">{formatDate(exam.submissionDate || exam.uploadDate)}</p>
                             </div>
                           </div>
                           
@@ -426,21 +416,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleApproveExam(exam.id)}
+                            onClick={() => handleApproveClick(exam.id)}
                             className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                             title="Approuver"
                           >
                             <Check className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleRejectExam(exam.id)}
+                            onClick={() => handleRejectClick(exam.id)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                             title="Rejeter"
                           >
                             <X className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteExam(exam.id)}
+                            onClick={() => handleDeletePendingClick(exam.id)}
                             className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                             title="Supprimer"
                           >
@@ -451,7 +441,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     </div>
                   ))}
 
-                  {pendingExams.filter(exam => exam.status === 'pending').length === 0 && (
+                  {pendingExams.filter(exam => !exam.status || exam.status === 'pending').length === 0 && (
                     <div className="text-center py-12">
                       <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun examen en attente</h3>
@@ -467,12 +457,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">Tous les examens</h2>
                   <div className="text-sm text-gray-600">
-                    {mockExams.length} examens publiés
+                    {publishedExams.length} examens publiés
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockExams.map(exam => (
+                  {publishedExams.map(exam => (
                     <div key={exam.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{exam.title}</h3>
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{exam.description}</p>
@@ -491,7 +481,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                           <span>{Math.round(exam.fileSize * 10) / 10} MB</span>
                         </div>
                         <button
-                          onClick={() => handleDeleteExam(exam.id)}
+                          onClick={() => handleDeletePublishedClick(exam.id)}
                           className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                           title="Supprimer"
                         >
@@ -933,6 +923,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal de rejet avec raison */}
+      {showRejectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Rejeter l'examen
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Veuillez indiquer la raison du rejet (optionnel) :
+              </p>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Raison du rejet..."
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                rows={3}
+              />
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowRejectionModal(false);
+                    setExamToReject(null);
+                    setRejectionReason('');
+                  }}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmReject}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Rejeter
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de prévisualisation */}
       {showPreviewModal && previewExam && (
