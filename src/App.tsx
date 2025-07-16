@@ -10,7 +10,7 @@ import PreviewModal from './components/PreviewModal';
 import Footer from './components/Footer';
 import { mockExams } from './data/mockData';
 import { Exam, FilterOptions } from './types';
-import { examStorage, favoritesStorage, initializeStorage, cleanupStorage } from './utils/storage';
+import { examStorage, favoritesStorage, pendingExamStorage, initializeStorage, cleanupStorage } from './utils/storage';
 
 function App() {
   const [exams, setExams] = useState<Exam[]>([]);
