@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, User, Mail, Calendar, Upload, Download, Star, Settings, Edit2, Save, Camera, Award, TrendingUp, FileText, Heart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { mockExams } from '../data/mockData';
+import { favoritesStorage } from '../utils/storage';
 import UserAvatar from './UserAvatar';
 
 interface UserProfileProps {
@@ -9,7 +10,7 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'uploads' | 'favorites' | 'settings'>('overview');
   const [editData, setEditData] = useState({
@@ -20,13 +21,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
   if (!user) return null;
 
+  // Calculer les statistiques réelles
   const userUploads = mockExams.filter(exam => exam.uploader.name === user.name);
-  const userFavorites = mockExams.filter(exam => exam.isFavorited);
+  const favoriteIds = favoritesStorage.load();
+  const userFavorites = mockExams.filter(exam => favoriteIds.includes(exam.id));
   const totalDownloadsReceived = userUploads.reduce((sum, exam) => sum + exam.downloads, 0);
+  
+  // Calculer les jours depuis l'inscription
+  const daysSinceJoin = Math.floor((Date.now() - user.joinDate.getTime()) / (1000 * 60 * 60 * 24));
 
   const handleSave = () => {
-    // Ici on sauvegarderait les modifications
+    // Sauvegarder les modifications du profil
+    updateUser({
+      name: editData.name,
+      email: editData.email
+    });
     setIsEditing(false);
+    alert('Profil mis à jour avec succès !');
   };
 
   const formatDate = (date: Date) => {
@@ -127,20 +138,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
           {/* Statistiques rapides */}
           <div className="grid grid-cols-4 gap-4 mt-6">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{userUploads.length}</div>
+              <div className="text-2xl font-bold text-blue-600">{user.uploads}</div>
               <div className="text-sm text-gray-600">Uploads</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{totalDownloadsReceived}</div>
+              <div className="text-2xl font-bold text-green-600">{user.downloads}</div>
               <div className="text-sm text-gray-600">Téléchargements</div>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{userFavorites.length}</div>
+              <div className="text-2xl font-bold text-purple-600">{favoriteIds.length}</div>
               <div className="text-sm text-gray-600">Favoris</div>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">
               <div className="text-2xl font-bold text-orange-600">
-                {Math.floor((Date.now() - user.joinDate.getTime()) / (1000 * 60 * 60 * 24))}
+                {daysSinceJoin}
               </div>
               <div className="text-sm text-gray-600">Jours</div>
             </div>

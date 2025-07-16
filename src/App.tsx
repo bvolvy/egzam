@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import BookshelfView from './components/BookshelfView';
 import SearchResults from './components/SearchResults';
@@ -12,7 +13,9 @@ import { mockExams } from './data/mockData';
 import { Exam, FilterOptions } from './types';
 import { examStorage, favoritesStorage, pendingExamStorage, initializeStorage, cleanupStorage } from './utils/storage';
 
-function App() {
+// Composant principal avec accès au contexte d'authentification
+const AppContent: React.FC = () => {
+  const { user, updateUserStats } = useAuth();
   const [exams, setExams] = useState<Exam[]>([]);
   const [filteredExams, setFilteredExams] = useState<Exam[]>(mockExams);
   const [searchResults, setSearchResults] = useState<Exam[]>([]);
@@ -170,11 +173,18 @@ function App() {
       return updated;
     });
     
+    // Mettre à jour les statistiques utilisateur
+    if (user) {
+      updateUserStats('download');
+    }
+    
     // Show success message
     alert('Téléchargement démarré !');
   };
 
   const handleFavorite = (examId: string) => {
+    const wasAlreadyFavorited = exams.find(e => e.id === examId)?.isFavorited;
+    
     setExams(prev => {
       const updated = prev.map(exam => 
         exam.id === examId 
@@ -191,6 +201,10 @@ function App() {
       if (exam) {
         if (exam.isFavorited) {
           favoritesStorage.add(examId);
+          // Incrémenter les statistiques si c'est un nouveau favori
+          if (user && !wasAlreadyFavorited) {
+            updateUserStats('favorite');
+          }
         } else {
           favoritesStorage.remove(examId);
         }
@@ -220,7 +234,7 @@ function App() {
       uploadDate: new Date(),
       downloads: 0,
       favorites: 0,
-      uploader: { id: '1', name: 'Utilisateur' },
+      uploader: { id: user?.id || '1', name: user?.name || 'Utilisateur' },
       isFavorited: false,
       status: 'pending',
       submissionDate: new Date()
@@ -232,6 +246,11 @@ function App() {
       pendingExamStorage.save(updated);
       return updated;
     });
+    
+    // Mettre à jour les statistiques utilisateur
+    if (user) {
+      updateUserStats('upload');
+    }
     
     setShowUploadModal(false);
     alert('Examen soumis avec succès ! Il sera visible après approbation par un administrateur.');
@@ -376,6 +395,15 @@ function App() {
           />
         )}
       </div>
+    </AuthProvider>
+  );
+}
+
+// Wrapper principal avec AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }
