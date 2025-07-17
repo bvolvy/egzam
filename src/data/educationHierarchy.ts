@@ -176,7 +176,7 @@ export const educationLevels: EducationLevel[] = [
       'Comptabilité',
       'Marketing',
       'Gestion de PME',
-      'Agriculture & Irrigation',
+      'Agriculture',
       'Sécurité & Secourisme'
     ],
     color: {
