@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Users, FileText, Settings, Trash2, Eye, Check, AlertTriangle, Download, Upload, Plus, Edit2, Save, Ambulance as Cancel, UserX, Shield, Crown, Mail, Calendar, Ban, UserCheck } from 'lucide-react';
 import { mockExams } from '../data/mockData';
-import { classes, matieres, addCustomClasse, addCustomMatiere, removeCustomClasse, removeCustomMatiere } from '../data/mockData';
+import { educationLevels, getAllClasses, getAllMatieres } from '../data/educationHierarchy';
 import { Exam, User } from '../types';
 import PreviewModal from './PreviewModal';
 
@@ -42,6 +42,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingMatiere, setEditingMatiere] = useState<string | null>(null);
   const [newClasse, setNewClasse] = useState('');
   const [newMatiere, setNewMatiere] = useState('');
+  const [selectedLevelForClasse, setSelectedLevelForClasse] = useState('');
+  const [selectedLevelForMatiere, setSelectedLevelForMatiere] = useState('');
   const [editValue, setEditValue] = useState('');
 
   const [rejectionReason, setRejectionReason] = useState('');
@@ -137,63 +139,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  const handleAddClasse = () => {
-    if (newClasse.trim()) {
-      addCustomClasse(newClasse.trim());
-      setNewClasse('');
-      alert('Classe ajoutée avec succès !');
-    }
-  };
-
-  const handleAddMatiere = () => {
-    if (newMatiere.trim()) {
-      addCustomMatiere(newMatiere.trim());
-      setNewMatiere('');
-      alert('Matière ajoutée avec succès !');
-    }
-  };
-
-  const handleEditClasse = (oldClasse: string) => {
-    setEditingClasse(oldClasse);
-    setEditValue(oldClasse);
-  };
-
-  const handleEditMatiere = (oldMatiere: string) => {
-    setEditingMatiere(oldMatiere);
-    setEditValue(oldMatiere);
-  };
-
-  const handleSaveClasseEdit = () => {
-    if (editingClasse && editValue.trim()) {
-      const index = classes.indexOf(editingClasse);
-      if (index !== -1) {
-        classes[index] = editValue.trim();
-        localStorage.setItem('egzamachiv_classes', JSON.stringify(classes));
-      }
-      setEditingClasse(null);
-      setEditValue('');
-      alert('Classe modifiée avec succès !');
-    }
-  };
-
-  const handleSaveMatiereEdit = () => {
-    if (editingMatiere && editValue.trim()) {
-      const index = matieres.indexOf(editingMatiere);
-      if (index !== -1) {
-        matieres[index] = editValue.trim();
-        localStorage.setItem('egzamachiv_matieres', JSON.stringify(matieres));
-      }
-      setEditingMatiere(null);
-      setEditValue('');
-      alert('Matière modifiée avec succès !');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingClasse(null);
-    setEditingMatiere(null);
-    setEditValue('');
-  };
+  // Obtenir toutes les classes et matières du système hiérarchique
+  const allClasses = getAllClasses();
+  const allMatieres = getAllMatieres();
 
   // Fonctions de gestion des utilisateurs
   const handleSuspendUser = (userId: string) => {
@@ -717,165 +665,58 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
             {activeTab === 'settings' && (
               <div className="space-y-8">
+                {/* Système éducatif hiérarchique */}
                 <div>
-                  <h2 className="text-lg font-semibold mb-6">Gestion des classes</h2>
+                  <h2 className="text-lg font-semibold mb-6">Système éducatif haïtien</h2>
                   
-                  {/* Ajouter une nouvelle classe */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-medium text-blue-900 mb-3">Ajouter une nouvelle classe</h3>
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="text"
-                        value={newClasse}
-                        onChange={(e) => setNewClasse(e.target.value)}
-                        placeholder="Ex: Philo, Rhéto..."
-                        className="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <button
-                        onClick={handleAddClasse}
-                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Ajouter
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Liste des classes */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {classes.map((classe, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        {editingClasse === classe ? (
-                          <div className="flex items-center space-x-2 flex-1">
-                            <input
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            <button
-                              onClick={handleSaveClasseEdit}
-                              className="p-1 text-green-600 hover:text-green-700"
-                              title="Sauvegarder"
-                            >
-                              <Save className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="p-1 text-gray-600 hover:text-gray-700"
-                              title="Annuler"
-                            >
-                              <Cancel className="h-4 w-4" />
-                            </button>
+                  <div className="space-y-6">
+                    {educationLevels.map((level) => (
+                      <div key={level.id} className={`bg-${level.color.secondary} border border-${level.color.primary}-200 rounded-lg p-6`}>
+                        <div className="flex items-center space-x-3 mb-4">
+                          <span className="text-2xl">{level.icon}</span>
+                          <div>
+                            <h3 className={`text-lg font-semibold text-${level.color.accent}`}>
+                              {level.name}
+                            </h3>
+                            <p className="text-sm text-gray-600">{level.description}</p>
                           </div>
-                        ) : (
-                          <>
-                            <span className="text-gray-700 font-medium">{classe}</span>
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => handleEditClasse(classe)}
-                                className="p-1 text-blue-600 hover:text-blue-700"
-                                title="Modifier"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Supprimer la classe "${classe}" ?`)) {
-                                    removeCustomClasse(classe);
-                                    alert('Classe supprimée !');
-                                  }
-                                }}
-                                className="p-1 text-red-600 hover:text-red-700"
-                                title="Supprimer"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Classes */}
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3">
+                              Classes ({level.classes.length})
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {level.classes.map((classe) => (
+                                <span
+                                  key={classe}
+                                  className={`px-3 py-1 bg-${level.color.primary}-100 text-${level.color.accent} text-sm rounded-full border border-${level.color.primary}-200`}
+                                >
+                                  {classe}
+                                </span>
+                              ))}
                             </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="text-lg font-semibold mb-6">Gestion des matières</h2>
-                  
-                  {/* Ajouter une nouvelle matière */}
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-medium text-green-900 mb-3">Ajouter une nouvelle matière</h3>
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="text"
-                        value={newMatiere}
-                        onChange={(e) => setNewMatiere(e.target.value)}
-                        placeholder="Ex: Informatique, Comptabilité..."
-                        className="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <button
-                        onClick={handleAddMatiere}
-                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Ajouter
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Liste des matières */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {matieres.map((matiere, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        {editingMatiere === matiere ? (
-                          <div className="flex items-center space-x-2 flex-1">
-                            <input
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            <button
-                              onClick={handleSaveMatiereEdit}
-                              className="p-1 text-green-600 hover:text-green-700"
-                              title="Sauvegarder"
-                            >
-                              <Save className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="p-1 text-gray-600 hover:text-gray-700"
-                              title="Annuler"
-                            >
-                              <Cancel className="h-4 w-4" />
-                            </button>
                           </div>
-                        ) : (
-                          <>
-                            <span className="text-gray-700 font-medium">{matiere}</span>
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => handleEditMatiere(matiere)}
-                                className="p-1 text-blue-600 hover:text-blue-700"
-                                title="Modifier"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Supprimer la matière "${matiere}" ?`)) {
-                                    removeCustomMatiere(matiere);
-                                    alert('Matière supprimée !');
-                                  }
-                                }}
-                                className="p-1 text-red-600 hover:text-red-700"
-                                title="Supprimer"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                          
+                          {/* Matières */}
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3">
+                              Matières ({level.matieres.length})
+                            </h4>
+                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                              {level.matieres.map((matiere) => (
+                                <span
+                                  key={matiere}
+                                  className={`px-3 py-1 bg-${level.color.primary}-100 text-${level.color.accent} text-sm rounded-full border border-${level.color.primary}-200`}
+                                >
+                                  {matiere}
+                                </span>
+                              ))}
                             </div>
-                          </>
-                        )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -886,6 +727,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   <h2 className="text-lg font-semibold mb-6">Paramètres généraux</h2>
                   <div className="bg-gray-50 rounded-lg p-6">
                     <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium text-gray-900">Système éducatif</h3>
+                          <p className="text-sm text-gray-600">
+                            {educationLevels.length} niveaux • {allClasses.length} classes • {allMatieres.length} matières
+                          </p>
+                        </div>
+                        <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                          Haïtien
+                        </span>
+                      </div>
+                      
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium text-gray-900">Taille maximale des fichiers</h3>

@@ -4,7 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import BookshelfView from './components/BookshelfView';
 import SearchResults from './components/SearchResults';
-import FilterPanel from './components/FilterPanel';
+import HierarchicalFilterPanel from './components/HierarchicalFilterPanel';
 import UploadModal from './components/UploadModal';
 import AdminPanel from './components/AdminPanel';
 import PreviewModal from './components/PreviewModal';
@@ -327,7 +327,7 @@ const AppContent: React.FC = () => {
             {/* Sidebar - Only show when not searching */}
             {!isSearching && (
               <div className="lg:w-64 mb-8 lg:mb-0">
-                <FilterPanel
+                <HierarchicalFilterPanel
                   filters={filters}
                   onFiltersChange={setFilters}
                   isOpen={isFilterPanelOpen}

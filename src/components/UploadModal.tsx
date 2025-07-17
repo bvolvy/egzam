@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, FileText, Loader2, AlertTriangle } from 'lucide-react';
-import { classes, matieres } from '../data/mockData';
+import { educationLevels, getClassesByLevel, getMatieresByLevel } from '../data/educationHierarchy';
 import PrivacyTermsPage from './PrivacyTermsPage';
 
 interface UploadModalProps {
@@ -9,6 +9,7 @@ interface UploadModalProps {
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
+  const [selectedLevel, setSelectedLevel] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -23,6 +24,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLevelChange = (levelId: string) => {
+    setSelectedLevel(levelId);
+    // Réinitialiser classe et matière quand le niveau change
+    setFormData(prev => ({ ...prev, classe: '', matiere: '' }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,44 +211,82 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
               />
             </div>
 
-            {/* Classe and Matière */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Classe *
-                </label>
-                <select
-                  name="classe"
-                  value={formData.classe}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Sélectionner une classe</option>
-                  {classes.map(classe => (
-                    <option key={classe} value={classe}>{classe}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Matière *
-                </label>
-                <select
-                  name="matiere"
-                  value={formData.matiere}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Sélectionner une matière</option>
-                  {matieres.map(matiere => (
-                    <option key={matiere} value={matiere}>{matiere}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Niveau d'enseignement */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Niveau d'enseignement *
+              </label>
+              <select
+                value={selectedLevel}
+                onChange={(e) => handleLevelChange(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Sélectionner un niveau</option>
+                {educationLevels.map(level => (
+                  <option key={level.id} value={level.id}>
+                    {level.icon} {level.name}
+                  </option>
+                ))}
+              </select>
+              {selectedLevel && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {educationLevels.find(l => l.id === selectedLevel)?.description}
+                </p>
+              )}
             </div>
+
+            {/* Classe and Matière - Only show if level is selected */}
+            {selectedLevel && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Classe *
+                  </label>
+                  <select
+                    name="classe"
+                    value={formData.classe}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Sélectionner une classe</option>
+                    {getClassesByLevel(selectedLevel).map(classe => (
+                      <option key={classe} value={classe}>{classe}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Matière *
+                  </label>
+                  <select
+                    name="matiere"
+                    value={formData.matiere}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Sélectionner une matière</option>
+                    {getMatieresByLevel(selectedLevel).map(matiere => (
+                      <option key={matiere} value={matiere}>{matiere}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Message d'aide si aucun niveau sélectionné */}
+            {!selectedLevel && (
+              <div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    📚 Sélectionnez d'abord un niveau d'enseignement pour voir les classes et matières disponibles.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* File Upload */}
             <div>

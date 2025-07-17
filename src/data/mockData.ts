@@ -1,5 +1,6 @@
 import { Exam } from '../types';
 import { customDataStorage } from '../utils/storage';
+import { getAllClasses, getAllMatieres } from './educationHierarchy';
 
 export const mockExams: Exam[] = [
   {
@@ -343,21 +344,14 @@ export const mockExams: Exam[] = [
   }
 ];
 
-// Classes et matières modifiables
-const defaultClasses = [
-  'Sixième', 'Cinquième', 'Quatrième', 'Troisième',
-  'Seconde', 'Première', 'Terminale'
-];
-
-const defaultMatieres = [
-  'Mathématiques', 'Français', 'Histoire-Géographie', 'SVT',
-  'Physique-Chimie', 'Anglais', 'Espagnol', 'Allemand',
-  'Philosophie', 'Économie', 'Arts Plastiques', 'Musique'
-];
+// Classes et matières du système hiérarchique
+const defaultClasses = getAllClasses();
+const defaultMatieres = getAllMatieres();
 
 // Charger les classes et matières depuis le stockage
 export let classes = customDataStorage.loadClasses(defaultClasses);
 export let matieres = customDataStorage.loadMatieres(defaultMatieres);
+
 // Fonctions pour gérer les classes et matières
 export const addCustomClasse = (classe: string) => {
   if (!classes.includes(classe)) {
