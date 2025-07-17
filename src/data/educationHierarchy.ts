@@ -16,7 +16,7 @@ export interface EducationLevel {
 export const educationLevels: EducationLevel[] = [
   {
     id: 'secondaire',
-    name: 'École secondaire',
+    name: 'Secondaire',
     icon: '🎒',
     description: 'Enseignement fondamental et secondaire (6e AF à Philo)',
     classes: [
@@ -158,7 +158,7 @@ export const educationLevels: EducationLevel[] = [
   },
   {
     id: 'technique',
-    name: 'Technique & Professionnel',
+    name: 'Professionnel',
     icon: '🛠️',
     description: 'Formation technique et professionnelle',
     classes: [
