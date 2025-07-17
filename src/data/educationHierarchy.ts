@@ -104,7 +104,7 @@ export const educationLevels: EducationLevel[] = [
     icon: '🎓',
     description: 'Enseignement supérieur et recherche',
     classes: [
-      'Propédeutique',
+      'Préparatoire',
       'DUT1',
       'DUT2',
       'Bac + 1 (L1)',
