@@ -39,31 +39,36 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
       setError('');
       
       try {
-        if (exam.fileData) {
-          console.log('📄 Chargement du fichier téléversé:', exam.fileData.name);
+        // Vérifier d'abord si on a le fichier réel en mémoire
+        if (exam.fileData && exam.fileData instanceof File) {
+          console.log('📄 Chargement du fichier téléversé réel:', exam.fileData.name);
           const url = URL.createObjectURL(exam.fileData);
           setDocumentUrl(url);
-          
-          // Estimer le nombre de pages basé sur la taille du fichier
-          const estimatedPages = Math.max(1, Math.floor(exam.fileSize / 0.3) + 1);
-          setTotalPages(estimatedPages);
-        } 
+          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
+        }
+        // Sinon, vérifier si on a une URL de document stockée
         else if (exam.documentUrl) {
-          console.log('🔗 Chargement du document existant:', exam.documentUrl);
+          console.log('🔗 Chargement du document depuis URL stockée:', exam.documentUrl);
           setDocumentUrl(exam.documentUrl);
           setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
         }
+        // Pour les examens sans fichier réel, essayer de récupérer depuis le stockage local
         else {
-          console.log('🌐 Récupération du document depuis le serveur pour:', exam.id);
-          const documentData = await fetchDocumentFromServer(exam.id);
+          console.log('🗄️ Tentative de récupération depuis le stockage local pour:', exam.id);
+          const storedFileUrl = localStorage.getItem(`exam_file_${exam.id}`);
           
-          if (documentData) {
+          if (storedFileUrl) {
+            console.log('✅ Fichier trouvé dans le stockage local');
+            setDocumentUrl(storedFileUrl);
+            setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
+          } else {
+            console.log('⚠️ Aucun fichier réel disponible, génération d\'un document de démonstration');
+            // Générer un document de démonstration uniquement si aucun fichier réel n'est disponible
+            const documentData = await generateDemoDocument(exam);
             const blob = new Blob([documentData], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             setDocumentUrl(url);
             setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
-          } else {
-            throw new Error('Document non trouvé sur le serveur');
           }
         }
         
@@ -150,14 +155,11 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [currentPage, totalPages, isFullscreen, zoom]);
 
-  const fetchDocumentFromServer = async (examId: string): Promise<ArrayBuffer | null> => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log('🔧 Génération d\'un document mock simple pour:', examId);
-    return generateSimpleMockDocument(examId);
-  };
 
-  const generateSimpleMockDocument = (examId: string): ArrayBuffer => {
+  const generateDemoDocument = async (exam: Exam): Promise<ArrayBuffer> => {
+    // Simuler un délai de chargement
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -190,17 +192,23 @@ endobj
 
 4 0 obj
 <<
-/Length 200
+/Length 300
 >>
 stream
 BT
 /F1 14 Tf
 50 750 Td
-(Document d'examen - ${examId}) Tj
+(${exam.title}) Tj
 0 -30 Td
-(Contenu du document original ici...) Tj
+(Classe: ${exam.classe} - Matière: ${exam.matiere}) Tj
 0 -30 Td
-(En production, ce sera le vrai PDF.) Tj
+(⚠️ Aperçu de démonstration) Tj
+0 -30 Td
+(Le fichier original n'est plus disponible.) Tj
+0 -30 Td
+(Téléversé par: ${exam.uploader.name}) Tj
+0 -30 Td
+(Taille: ${exam.fileSize} MB) Tj
 ET
 endstream
 endobj

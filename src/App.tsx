@@ -224,7 +224,7 @@ const AppContent: React.FC = () => {
 
   const handleUpload = (examData: any) => {
     const newExam: Exam = {
-      id: Date.now().toString(),
+      id: examData.id || Date.now().toString(),
       title: examData.title,
       description: examData.description,
       classe: examData.classe,
@@ -237,7 +237,9 @@ const AppContent: React.FC = () => {
       uploader: { id: user?.id || '1', name: user?.name || 'Utilisateur' },
       isFavorited: false,
       status: 'pending',
-      submissionDate: new Date()
+      submissionDate: new Date(),
+      fileData: examData.fileData,
+      documentUrl: examData.documentUrl
     };
 
     // Ajouter aux examens en attente au lieu des examens publiés

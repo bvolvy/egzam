@@ -106,14 +106,21 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
     //   body: formDataToSend
     // });
     
+    // Stocker le fichier réel dans le stockage local pour la prévisualisation
+    const fileUrl = URL.createObjectURL(formData.file);
+    const examId = Date.now().toString();
+    localStorage.setItem(`exam_file_${examId}`, fileUrl);
+    
     const examData = {
+      id: examId,
       title: formData.title,
       description: formData.description,
       classe: formData.classe,
       matiere: formData.matiere,
       fileName: formData.file.name,
       fileSize: formData.file.size / (1024 * 1024), // Convert to MB
-      fileData: formData.file // Garder une référence au fichier réel
+      fileData: formData.file, // Garder une référence au fichier réel
+      documentUrl: fileUrl // URL pour la prévisualisation
     };
 
     onUpload(examData);
