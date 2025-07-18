@@ -35,6 +35,7 @@ export interface Exam {
   rejectionDate?: Date;
   rejectionReason?: string;
   isOfficial?: boolean; // Indique si c'est un examen officiel MENFP
+  level?: string; // Niveau d'enseignement explicite
 }
 
 export interface FilterOptions {

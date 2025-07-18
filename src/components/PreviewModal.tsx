@@ -32,8 +32,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
   const [darkMode, setDarkMode] = useState(false);
   
   // Vérifier si c'est un examen officiel MENFP
-  const examLevel = getLevelByClasse(exam.classe);
-  const isMENFPOfficial = examLevel?.id === 'officiel';
+  const isMENFPOfficial = exam.isOfficial || exam.level === 'officiel';
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);

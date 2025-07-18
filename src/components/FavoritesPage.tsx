@@ -206,15 +206,11 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                   </div>
                   
                   {/* Badge MENFP pour examens officiels */}
-                  {(() => {
-                    const examLevel = getLevelByClasse(exam.classe);
-                    const isMENFPOfficial = examLevel?.id === 'officiel';
-                    return isMENFPOfficial && (
-                      <div className="absolute top-2 left-2 z-10">
-                        <MENFPBadge size="sm" variant="award" />
-                      </div>
-                    );
-                  })()}
+                  {(exam.isOfficial || exam.level === 'officiel') && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <MENFPBadge size="sm" variant="award" />
+                    </div>
+                  )}
 
                   {/* Carte d'examen */}
                   <div className={`transition-all duration-200 ${selectedItems.includes(exam.id) ? 'ring-2 ring-red-500 ring-opacity-50' : ''}`}>

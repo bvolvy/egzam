@@ -205,15 +205,11 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                   </div>
                   
                   {/* Badge MENFP pour examens officiels */}
-                  {(() => {
-                    const examLevel = getLevelByClasse(exam.classe);
-                    const isMENFPOfficial = examLevel?.id === 'officiel';
-                    return isMENFPOfficial && (
-                      <div className="absolute top-2 left-2 z-10">
-                        <MENFPBadge size="sm" variant="shield" />
-                      </div>
-                    );
-                  })()}
+                  {(exam.isOfficial || exam.level === 'officiel') && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <MENFPBadge size="sm" variant="shield" />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

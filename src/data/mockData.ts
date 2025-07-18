@@ -46,7 +46,8 @@ export const mockExams: Exam[] = [
     favorites: 19,
     uploader: { id: '3', name: 'Mme Leblanc' },
     isFavorited: false,
-    isOfficial: true // Marquer comme examen officiel
+    isOfficial: true, // Marquer comme examen officiel
+    level: 'officiel' // Ajouter le niveau explicitement
   },
   {
     id: '4',
@@ -61,7 +62,8 @@ export const mockExams: Exam[] = [
     favorites: 22,
     uploader: { id: '4', name: 'Dr. Rousseau' },
     isFavorited: false,
-    isOfficial: true // Marquer comme examen officiel
+    isOfficial: true, // Marquer comme examen officiel
+    level: 'officiel' // Ajouter le niveau explicitement
   },
   {
     id: '5',
@@ -104,7 +106,8 @@ export const mockExams: Exam[] = [
     favorites: 18,
     uploader: { id: '7', name: 'Señora García' },
     isFavorited: false,
-    isOfficial: true // Marquer comme examen officiel
+    isOfficial: true, // Marquer comme examen officiel
+    level: 'officiel' // Ajouter le niveau explicitement
   },
   {
     id: '8',
@@ -134,7 +137,8 @@ export const mockExams: Exam[] = [
     favorites: 12,
     uploader: { id: '9', name: 'Prof. Moreau' },
     isFavorited: false,
-    isOfficial: true // Marquer comme examen officiel
+    isOfficial: true, // Marquer comme examen officiel
+    level: 'officiel' // Ajouter le niveau explicitement
   },
   {
     id: '10',
@@ -163,7 +167,8 @@ export const mockExams: Exam[] = [
     favorites: 16,
     uploader: { id: '11', name: 'M. Dubois' },
     isFavorited: true,
-    isOfficial: true // Marquer comme examen officiel
+    isOfficial: true, // Marquer comme examen officiel
+    level: 'officiel' // Ajouter le niveau explicitement
   },
   {
     id: '12',
@@ -178,7 +183,8 @@ export const mockExams: Exam[] = [
     favorites: 21,
     uploader: { id: '12', name: 'Dr. Blanc' },
     isFavorited: false,
-    isOfficial: true // Marquer comme examen officiel
+    isOfficial: true, // Marquer comme examen officiel
+    level: 'officiel' // Ajouter le niveau explicitement
   },
   {
     id: '13',

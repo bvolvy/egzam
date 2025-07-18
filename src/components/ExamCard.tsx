@@ -136,8 +136,7 @@ startxref
   const isRecent = new Date(exam.uploadDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
   // Vérifier si c'est un examen officiel MENFP
-  const examLevel = getLevelByClasse(exam.classe);
-  const isMENFPOfficial = examLevel?.id === 'officiel';
+  const isMENFPOfficial = exam.isOfficial || exam.level === 'officiel';
 
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group backdrop-blur-sm">
