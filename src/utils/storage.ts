@@ -216,6 +216,33 @@ export const customDataStorage = {
 
   loadMatieres: (defaultMatieres: string[] = []) => {
     return storage.get(STORAGE_KEYS.MATIERES, defaultMatieres);
+  },
+
+  // Gestion des niveaux personnalisés
+  saveCustomLevels: (levels: any[]) => {
+    storage.set('egzamachiv_custom_levels', levels);
+  },
+
+  loadCustomLevels: (defaultLevels: any[] = []) => {
+    return storage.get('egzamachiv_custom_levels', defaultLevels);
+  },
+
+  // Gestion des classes par niveau
+  saveClassesByLevel: (levelId: string, classes: string[]) => {
+    storage.set(`egzamachiv_classes_${levelId}`, classes);
+  },
+
+  loadClassesByLevel: (levelId: string, defaultClasses: string[] = []) => {
+    return storage.get(`egzamachiv_classes_${levelId}`, defaultClasses);
+  },
+
+  // Gestion des matières par niveau
+  saveMatieresByLevel: (levelId: string, matieres: string[]) => {
+    storage.set(`egzamachiv_matieres_${levelId}`, matieres);
+  },
+
+  loadMatieresByLevel: (levelId: string, defaultMatieres: string[] = []) => {
+    return storage.get(`egzamachiv_matieres_${levelId}`, defaultMatieres);
   }
 };
 

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Users, FileText, Settings, Trash2, Eye, Check, AlertTriangle, Download, Upload, Plus, Edit2, Save, Ambulance as Cancel, UserX, Shield, Crown, Mail, Calendar, Ban, UserCheck } from 'lucide-react';
+import { X, Users, FileText, Settings, Trash2, Eye, Check, AlertTriangle, Download, Upload, Plus, Edit2, Save, Ambulance as Cancel, UserX, Shield, Crown, Mail, Calendar, Ban, UserCheck, BookOpen, GraduationCap, Wrench } from 'lucide-react';
 import { mockExams } from '../data/mockData';
 import { educationLevels, getAllClasses, getAllMatieres } from '../data/educationHierarchy';
 import { Exam, User } from '../types';
 import PreviewModal from './PreviewModal';
+import { customDataStorage } from '../utils/storage';
 
 // Logo pour le panneau admin
 const AdminLogo: React.FC = () => (
@@ -45,6 +46,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [selectedLevelForClasse, setSelectedLevelForClasse] = useState('');
   const [selectedLevelForMatiere, setSelectedLevelForMatiere] = useState('');
   const [editValue, setEditValue] = useState('');
+  const [customLevels, setCustomLevels] = useState(educationLevels);
 
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionModal, setShowRejectionModal] = useState(false);
@@ -99,6 +101,104 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   ];
 
   const [users, setUsers] = useState<User[]>(mockUsers);
+
+  // Charger les niveaux personnalisés au démarrage
+  React.useEffect(() => {
+    const savedLevels = customDataStorage.loadCustomLevels(educationLevels);
+    setCustomLevels(savedLevels);
+  }, []);
+
+  // Sauvegarder les niveaux personnalisés
+  const saveCustomLevels = (levels: any[]) => {
+    setCustomLevels(levels);
+    customDataStorage.saveCustomLevels(levels);
+  };
+
+  // Ajouter une classe à un niveau
+  const addClasseToLevel = (levelId: string, newClasse: string) => {
+    if (!newClasse.trim()) return;
+    
+    const updatedLevels = customLevels.map(level => 
+      level.id === levelId 
+        ? { ...level, classes: [...level.classes, newClasse.trim()] }
+        : level
+    );
+    saveCustomLevels(updatedLevels);
+    setNewClasse('');
+    setSelectedLevelForClasse('');
+  };
+
+  // Supprimer une classe d'un niveau
+  const removeClasseFromLevel = (levelId: string, classeToRemove: string) => {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer la classe "${classeToRemove}" ?`)) {
+      const updatedLevels = customLevels.map(level => 
+        level.id === levelId 
+          ? { ...level, classes: level.classes.filter(c => c !== classeToRemove) }
+          : level
+      );
+      saveCustomLevels(updatedLevels);
+    }
+  };
+
+  // Ajouter une matière à un niveau
+  const addMatiereToLevel = (levelId: string, newMatiere: string) => {
+    if (!newMatiere.trim()) return;
+    
+    const updatedLevels = customLevels.map(level => 
+      level.id === levelId 
+        ? { ...level, matieres: [...level.matieres, newMatiere.trim()] }
+        : level
+    );
+    saveCustomLevels(updatedLevels);
+    setNewMatiere('');
+    setSelectedLevelForMatiere('');
+  };
+
+  // Supprimer une matière d'un niveau
+  const removeMatiereFromLevel = (levelId: string, matiereToRemove: string) => {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer la matière "${matiereToRemove}" ?`)) {
+      const updatedLevels = customLevels.map(level => 
+        level.id === levelId 
+          ? { ...level, matieres: level.matieres.filter(m => m !== matiereToRemove) }
+          : level
+      );
+      saveCustomLevels(updatedLevels);
+    }
+  };
+
+  // Modifier une classe
+  const editClasse = (levelId: string, oldClasse: string, newClasse: string) => {
+    if (!newClasse.trim()) return;
+    
+    const updatedLevels = customLevels.map(level => 
+      level.id === levelId 
+        ? { 
+            ...level, 
+            classes: level.classes.map(c => c === oldClasse ? newClasse.trim() : c) 
+          }
+        : level
+    );
+    saveCustomLevels(updatedLevels);
+    setEditingClasse(null);
+    setEditValue('');
+  };
+
+  // Modifier une matière
+  const editMatiere = (levelId: string, oldMatiere: string, newMatiere: string) => {
+    if (!newMatiere.trim()) return;
+    
+    const updatedLevels = customLevels.map(level => 
+      level.id === levelId 
+        ? { 
+            ...level, 
+            matieres: level.matieres.map(m => m === oldMatiere ? newMatiere.trim() : m) 
+          }
+        : level
+    );
+    saveCustomLevels(updatedLevels);
+    setEditingMatiere(null);
+    setEditValue('');
+  };
 
   const handlePreviewExam = (exam: Exam) => {
     setPreviewExam(exam);
@@ -667,10 +767,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="space-y-8">
                 {/* Système éducatif hiérarchique */}
                 <div>
-                  <h2 className="text-lg font-semibold mb-6">Système éducatif haïtien</h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-semibold">Système éducatif haïtien</h2>
+                    <div className="text-sm text-gray-600">
+                      {customLevels.length} niveaux • {customLevels.reduce((sum, l) => sum + l.classes.length, 0)} classes • {customLevels.reduce((sum, l) => sum + l.matieres.length, 0)} matières
+                    </div>
+                  </div>
                   
                   <div className="space-y-6">
-                    {educationLevels.map((level) => (
+                    {customLevels.map((level) => (
                       <div key={level.id} className={`bg-${level.color.secondary} border border-${level.color.primary}-200 rounded-lg p-6`}>
                         <div className="flex items-center space-x-3 mb-4">
                           <span className="text-2xl">{level.icon}</span>
@@ -685,34 +790,206 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {/* Classes */}
                           <div>
-                            <h4 className="font-medium text-gray-900 mb-3">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900">
                               Classes ({level.classes.length})
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
+                              </h4>
+                              <button
+                                onClick={() => {
+                                  setSelectedLevelForClasse(level.id);
+                                  setNewClasse('');
+                                }}
+                                className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                              >
+                                <Plus className="h-3 w-3 inline mr-1" />
+                                Ajouter
+                              </button>
+                            </div>
+                            
+                            {/* Formulaire d'ajout de classe */}
+                            {selectedLevelForClasse === level.id && (
+                              <div className="mb-3 p-3 bg-white rounded border border-green-200">
+                                <div className="flex space-x-2">
+                                  <input
+                                    type="text"
+                                    value={newClasse}
+                                    onChange={(e) => setNewClasse(e.target.value)}
+                                    placeholder="Nouvelle classe..."
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        addClasseToLevel(level.id, newClasse);
+                                      } else if (e.key === 'Escape') {
+                                        setSelectedLevelForClasse('');
+                                        setNewClasse('');
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => addClasseToLevel(level.id, newClasse)}
+                                    className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedLevelForClasse('');
+                                      setNewClasse('');
+                                    }}
+                                    className="px-3 py-1 bg-gray-400 text-white text-sm rounded hover:bg-gray-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                               {level.classes.map((classe) => (
-                                <span
+                                <div
                                   key={classe}
-                                  className={`px-3 py-1 bg-${level.color.primary}-100 text-${level.color.accent} text-sm rounded-full border border-${level.color.primary}-200`}
+                                  className={`group flex items-center px-3 py-1 bg-${level.color.primary}-100 text-${level.color.accent} text-sm rounded-full border border-${level.color.primary}-200`}
                                 >
-                                  {classe}
-                                </span>
+                                  {editingClasse === `${level.id}-${classe}` ? (
+                                    <input
+                                      type="text"
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          editClasse(level.id, classe, editValue);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingClasse(null);
+                                          setEditValue('');
+                                        }
+                                      }}
+                                      className="bg-white px-1 py-0 text-xs border border-gray-300 rounded w-20"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <span>{classe}</span>
+                                  )}
+                                  <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                                    <button
+                                      onClick={() => {
+                                        setEditingClasse(`${level.id}-${classe}`);
+                                        setEditValue(classe);
+                                      }}
+                                      className="text-blue-600 hover:text-blue-700"
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => removeClasseFromLevel(level.id, classe)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                </div>
                               ))}
                             </div>
                           </div>
                           
                           {/* Matières */}
                           <div>
-                            <h4 className="font-medium text-gray-900 mb-3">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900">
                               Matières ({level.matieres.length})
-                            </h4>
+                              </h4>
+                              <button
+                                onClick={() => {
+                                  setSelectedLevelForMatiere(level.id);
+                                  setNewMatiere('');
+                                }}
+                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors"
+                              >
+                                <Plus className="h-3 w-3 inline mr-1" />
+                                Ajouter
+                              </button>
+                            </div>
+                            
+                            {/* Formulaire d'ajout de matière */}
+                            {selectedLevelForMatiere === level.id && (
+                              <div className="mb-3 p-3 bg-white rounded border border-blue-200">
+                                <div className="flex space-x-2">
+                                  <input
+                                    type="text"
+                                    value={newMatiere}
+                                    onChange={(e) => setNewMatiere(e.target.value)}
+                                    placeholder="Nouvelle matière..."
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        addMatiereToLevel(level.id, newMatiere);
+                                      } else if (e.key === 'Escape') {
+                                        setSelectedLevelForMatiere('');
+                                        setNewMatiere('');
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => addMatiereToLevel(level.id, newMatiere)}
+                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedLevelForMatiere('');
+                                      setNewMatiere('');
+                                    }}
+                                    className="px-3 py-1 bg-gray-400 text-white text-sm rounded hover:bg-gray-500 transition-colors"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            
                             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                               {level.matieres.map((matiere) => (
-                                <span
+                                <div
                                   key={matiere}
-                                  className={`px-3 py-1 bg-${level.color.primary}-100 text-${level.color.accent} text-sm rounded-full border border-${level.color.primary}-200`}
+                                  className={`group flex items-center px-3 py-1 bg-${level.color.primary}-100 text-${level.color.accent} text-sm rounded-full border border-${level.color.primary}-200`}
                                 >
-                                  {matiere}
-                                </span>
+                                  {editingMatiere === `${level.id}-${matiere}` ? (
+                                    <input
+                                      type="text"
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          editMatiere(level.id, matiere, editValue);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingMatiere(null);
+                                          setEditValue('');
+                                        }
+                                      }}
+                                      className="bg-white px-1 py-0 text-xs border border-gray-300 rounded w-24"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <span>{matiere}</span>
+                                  )}
+                                  <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                                    <button
+                                      onClick={() => {
+                                        setEditingMatiere(`${level.id}-${matiere}`);
+                                        setEditValue(matiere);
+                                      }}
+                                      className="text-blue-600 hover:text-blue-700"
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => removeMatiereFromLevel(level.id, matiere)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                </div>
                               ))}
                             </div>
                           </div>
@@ -731,7 +1008,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <div>
                           <h3 className="font-medium text-gray-900">Système éducatif</h3>
                           <p className="text-sm text-gray-600">
-                            {educationLevels.length} niveaux • {allClasses.length} classes • {allMatieres.length} matières
+                            {customLevels.length} niveaux • {customLevels.reduce((sum, l) => sum + l.classes.length, 0)} classes • {customLevels.reduce((sum, l) => sum + l.matieres.length, 0)} matières
                           </p>
                         </div>
                         <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
@@ -766,6 +1043,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         </div>
                         <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
                           Activée
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium text-gray-900">Gestion des niveaux</h3>
+                          <p className="text-sm text-gray-600">Ajouter/modifier/supprimer classes et matières</p>
+                        </div>
+                        <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                          Personnalisable
                         </span>
                       </div>
                     </div>

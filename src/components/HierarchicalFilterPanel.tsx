@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Filter, X, RotateCcw, Search, BookOpen, GraduationCap, Wrench, FileText } from 'lucide-react';
 import { FilterOptions } from '../types';
 import { educationLevels, getClassesByLevel, getMatieresByLevel, EducationLevel } from '../data/educationHierarchy';
+import { customDataStorage } from '../utils/storage';
 
 interface HierarchicalFilterPanelProps {
   filters: FilterOptions;
@@ -19,6 +20,13 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [customLevels, setCustomLevels] = useState(educationLevels);
+
+  // Charger les niveaux personnalisés au démarrage
+  useEffect(() => {
+    const savedLevels = customDataStorage.loadCustomLevels(educationLevels);
+    setCustomLevels(savedLevels);
+  }, []);
 
   // Réinitialiser la sélection de niveau quand les filtres changent
   useEffect(() => {
@@ -70,9 +78,9 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
   };
 
   const getFilteredLevels = () => {
-    if (!searchTerm) return educationLevels;
+    if (!searchTerm) return customLevels;
     
-    return educationLevels.filter(level => 
+    return customLevels.filter(level => 
       level.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       level.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       level.classes.some(classe => classe.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -90,6 +98,8 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
         return <GraduationCap className="h-4 w-4" />;
       case 'technique':
         return <Wrench className="h-4 w-4" />;
+      case 'concours':
+        return <FileText className="h-4 w-4" />;
       default:
         return <BookOpen className="h-4 w-4" />;
     }
@@ -293,7 +303,7 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
                 <option value="">Toutes les classes</option>
-                {getClassesByLevel(selectedLevel).map(classe => (
+                {(customLevels.find(l => l.id === selectedLevel)?.classes || []).map(classe => (
                   <option key={classe} value={classe}>{classe}</option>
                 ))}
               </select>
@@ -310,7 +320,7 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
                 <option value="">Toutes les matières</option>
-                {getMatieresByLevel(selectedLevel).map(matiere => (
+                {(customLevels.find(l => l.id === selectedLevel)?.matieres || []).map(matiere => (
                   <option key={matiere} value={matiere}>{matiere}</option>
                 ))}
               </select>
@@ -346,7 +356,7 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
               </div>
               <div className="space-y-1 text-sm text-blue-800">
                 {selectedLevel && (
-                  <div>Niveau: {educationLevels.find(l => l.id === selectedLevel)?.name}</div>
+                  <div>Niveau: {customLevels.find(l => l.id === selectedLevel)?.name}</div>
                 )}
                 {filters.classe && <div>Classe: {filters.classe}</div>}
                 {filters.matiere && <div>Matière: {filters.matiere}</div>}

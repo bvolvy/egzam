@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import { educationLevels, getClassesByLevel, getMatieresByLevel } from '../data/educationHierarchy';
+import { customDataStorage } from '../utils/storage';
 import PrivacyTermsPage from './PrivacyTermsPage';
 
 interface UploadModalProps {
@@ -20,6 +21,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [showPrivacyTerms, setShowPrivacyTerms] = useState(false);
+  const [customLevels, setCustomLevels] = useState(educationLevels);
+
+  // Charger les niveaux personnalisés au démarrage
+  React.useEffect(() => {
+    const savedLevels = customDataStorage.loadCustomLevels(educationLevels);
+    setCustomLevels(savedLevels);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -223,7 +231,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                 required
               >
                 <option value="">Sélectionner un niveau</option>
-                {educationLevels.map(level => (
+                {customLevels.map(level => (
                   <option key={level.id} value={level.id}>
                     {level.icon} {level.name}
                   </option>
@@ -231,7 +239,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
               </select>
               {selectedLevel && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {educationLevels.find(l => l.id === selectedLevel)?.description}
+                  {customLevels.find(l => l.id === selectedLevel)?.description}
                 </p>
               )}
             </div>
@@ -251,7 +259,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                     required
                   >
                     <option value="">Sélectionner une classe</option>
-                    {getClassesByLevel(selectedLevel).map(classe => (
+                    {(customLevels.find(l => l.id === selectedLevel)?.classes || []).map(classe => (
                       <option key={classe} value={classe}>{classe}</option>
                     ))}
                   </select>
@@ -269,7 +277,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                     required
                   >
                     <option value="">Sélectionner une matière</option>
-                    {getMatieresByLevel(selectedLevel).map(matiere => (
+                    {(customLevels.find(l => l.id === selectedLevel)?.matieres || []).map(matiere => (
                       <option key={matiere} value={matiere}>{matiere}</option>
                     ))}
                   </select>

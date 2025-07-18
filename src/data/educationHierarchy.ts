@@ -190,6 +190,37 @@ export const educationLevels: EducationLevel[] = [
       secondary: 'orange-50',
       accent: 'orange-600'
     }
+  },
+  {
+    id: 'concours',
+    name: 'Concours d\'Admission',
+    icon: '📘',
+    description: 'Examens et tests d\'admission pour universités et institutions',
+    classes: [
+      'Adm. Université',
+      'Adm. PNH',
+      'Autres...'
+    ],
+    matieres: [
+      'Sciences',
+      'Médecine',
+      'Droit/Sciences politiques',
+      'Économie',
+      'Santé',
+      'Éducation',
+      'Informatique',
+      'Technique/Ingénierie',
+      'Agronomie',
+      'Arts/Communication',
+      'Langues/Lettres',
+      'Sciences Sociales',
+      'Cultures Générales'
+    ],
+    color: {
+      primary: 'indigo',
+      secondary: 'indigo-50',
+      accent: 'indigo-600'
+    }
   }
 ];
 
