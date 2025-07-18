@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
               <HaitiLogo className="h-8 w-8 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">EgzamAchiv</h1>
-                <p className="text-xs text-gray-600 -mt-1">Bibliothèque des examens Haïtiens</p>
+                <p className="text-xs text-gray-600 -mt-1">Bibliothèque des Examens Haïtiens</p>
               </div>
             </div>
 
