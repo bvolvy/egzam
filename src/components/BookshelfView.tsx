@@ -146,7 +146,7 @@ const BookshelfView: React.FC<BookshelfViewProps> = ({ exams, onDownload, onFavo
               </div>
             </div>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Téléversez, découvrez et téléchargez des examens scolaires Haitiens.
+              Téléversez, découvrez et téléchargez des Examens scolaires Haitiens.
             </p>
           </div>
 
