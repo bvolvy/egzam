@@ -2,6 +2,8 @@ import React from 'react';
 import { Search, Filter, SortAsc, X, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Exam } from '../types';
 import ExamCard from './ExamCard';
+import MENFPBadge from './MENFPBadge';
+import { getLevelByClasse } from '../data/educationHierarchy';
 
 interface SearchResultsProps {
   searchTerm: string;
@@ -201,6 +203,17 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                   <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
                     #{startIndex + index + 1}
                   </div>
+                  
+                  {/* Badge MENFP pour examens officiels */}
+                  {(() => {
+                    const examLevel = getLevelByClasse(exam.classe);
+                    const isMENFPOfficial = examLevel?.id === 'officiel';
+                    return isMENFPOfficial && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <MENFPBadge size="sm" variant="shield" />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ))}

@@ -2,6 +2,8 @@ import React from 'react';
 import { Exam } from '../types';
 import ExamCard from './ExamCard';
 import QuickStats from './QuickStats';
+import MENFPBadge from './MENFPBadge';
+import { getLevelByClasse } from '../data/educationHierarchy';
 import { BookOpen, TrendingUp, Star, Users, Download, FileText, Sparkles, Target, ChevronLeft, ChevronRight, MoreHorizontal, ArrowUp } from 'lucide-react';
 
 interface BookshelfViewProps {
@@ -249,6 +251,17 @@ const BookshelfView: React.FC<BookshelfViewProps> = ({ exams, onDownload, onFavo
                   </div>
                 </div>
               )}
+              
+              {/* Badge MENFP pour examens officiels */}
+              {(() => {
+                const examLevel = getLevelByClasse(exam.classe);
+                const isMENFPOfficial = examLevel?.id === 'officiel';
+                return isMENFPOfficial && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <MENFPBadge size="sm" variant="crown" />
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>

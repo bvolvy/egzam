@@ -45,7 +45,8 @@ export const mockExams: Exam[] = [
     downloads: 156,
     favorites: 19,
     uploader: { id: '3', name: 'Mme Leblanc' },
-    isFavorited: false
+    isFavorited: false,
+    isOfficial: true // Marquer comme examen officiel
   },
   {
     id: '4',
@@ -59,7 +60,8 @@ export const mockExams: Exam[] = [
     downloads: 134,
     favorites: 22,
     uploader: { id: '4', name: 'Dr. Rousseau' },
-    isFavorited: false
+    isFavorited: false,
+    isOfficial: true // Marquer comme examen officiel
   },
   {
     id: '5',
@@ -101,7 +103,8 @@ export const mockExams: Exam[] = [
     downloads: 143,
     favorites: 18,
     uploader: { id: '7', name: 'Señora García' },
-    isFavorited: false
+    isFavorited: false,
+    isOfficial: true // Marquer comme examen officiel
   },
   {
     id: '8',
@@ -130,7 +133,8 @@ export const mockExams: Exam[] = [
     downloads: 89,
     favorites: 12,
     uploader: { id: '9', name: 'Prof. Moreau' },
-    isFavorited: false
+    isFavorited: false,
+    isOfficial: true // Marquer comme examen officiel
   },
   {
     id: '10',
@@ -158,7 +162,8 @@ export const mockExams: Exam[] = [
     downloads: 112,
     favorites: 16,
     uploader: { id: '11', name: 'M. Dubois' },
-    isFavorited: true
+    isFavorited: true,
+    isOfficial: true // Marquer comme examen officiel
   },
   {
     id: '12',
@@ -172,7 +177,8 @@ export const mockExams: Exam[] = [
     downloads: 145,
     favorites: 21,
     uploader: { id: '12', name: 'Dr. Blanc' },
-    isFavorited: false
+    isFavorited: false,
+    isOfficial: true // Marquer comme examen officiel
   },
   {
     id: '13',

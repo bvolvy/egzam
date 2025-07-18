@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, AlertTriangle, Loader2, ChevronLeft, ChevronRight, RotateCcw, Minimize2, Search, BookOpen, Home, RefreshCw, Settings, Info, Share2, Printer as Print, Copy, ExternalLink } from 'lucide-react';
 import { Exam } from '../types';
+import MENFPBadge from './MENFPBadge';
+import { getLevelByClasse } from '../data/educationHierarchy';
 
 interface PreviewModalProps {
   exam: Exam;
@@ -28,6 +30,10 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
   const [showSettings, setShowSettings] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  
+  // Vérifier si c'est un examen officiel MENFP
+  const examLevel = getLevelByClasse(exam.classe);
+  const isMENFPOfficial = examLevel?.id === 'officiel';
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -775,6 +781,14 @@ startxref
                   <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     {exam.title}
                   </h3>
+                  
+                  {/* Badge MENFP pour examens officiels */}
+                  {isMENFPOfficial && (
+                    <div className="mb-3">
+                      <MENFPBadge size="md" variant="crown" />
+                    </div>
+                  )}
+                  
                   <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     {exam.description}
                   </p>
@@ -787,6 +801,12 @@ startxref
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getMatiereColor(exam.matiere)}`}>
                       {exam.matiere}
                     </span>
+                    {/* Badge niveau officiel */}
+                    {isMENFPOfficial && (
+                      <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-red-200 text-red-800 text-xs font-bold rounded-full border border-red-300">
+                        📋 Examen d'État
+                      </span>
+                    )}
                   </div>
                 </div>
 

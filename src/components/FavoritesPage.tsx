@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Star, Search, Filter, Download, Eye, Heart, Calendar, User, FileText, Trash2, X } from 'lucide-react';
 import { Exam } from '../types';
 import ExamCard from './ExamCard';
+import MENFPBadge from './MENFPBadge';
+import { getLevelByClasse } from '../data/educationHierarchy';
 
 interface FavoritesPageProps {
   favorites: Exam[];
@@ -202,6 +204,17 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                       <Star className="h-3 w-3 fill-current" />
                     </div>
                   </div>
+                  
+                  {/* Badge MENFP pour examens officiels */}
+                  {(() => {
+                    const examLevel = getLevelByClasse(exam.classe);
+                    const isMENFPOfficial = examLevel?.id === 'officiel';
+                    return isMENFPOfficial && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <MENFPBadge size="sm" variant="award" />
+                      </div>
+                    );
+                  })()}
 
                   {/* Carte d'examen */}
                   <div className={`transition-all duration-200 ${selectedItems.includes(exam.id) ? 'ring-2 ring-red-500 ring-opacity-50' : ''}`}>

@@ -34,6 +34,7 @@ export interface Exam {
   approvalDate?: Date;
   rejectionDate?: Date;
   rejectionReason?: string;
+  isOfficial?: boolean; // Indique si c'est un examen officiel MENFP
 }
 
 export interface FilterOptions {
