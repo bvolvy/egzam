@@ -271,10 +271,7 @@ const AppContent: React.FC = () => {
       const approvedExam = {
         ...examToApprove,
         status: 'approved',
-        approvalDate: new Date(),
-        // Si l'examen vient du niveau "officiel", marquer comme officiel
-        isOfficial: examToApprove.level === 'officiel' ? true : examToApprove.isOfficial,
-        level: examToApprove.level
+        approvalDate: new Date()
       };
       
       setExams(prev => {
