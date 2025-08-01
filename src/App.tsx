@@ -255,7 +255,13 @@ const AppContent: React.FC = () => {
     }
     
     setShowUploadModal(false);
-    alert('Examen soumis avec succès ! Il sera visible après approbation par un administrateur.');
+    
+    // Message différent selon le niveau
+    if (examData.niveau === 'officiel') {
+      alert('Examen officiel soumis avec succès ! Il recevra automatiquement le badge MENFP après approbation.');
+    } else {
+      alert('Examen soumis avec succès ! Il sera visible après approbation par un administrateur.');
+    }
   };
 
   // Fonctions de gestion des examens en attente
@@ -271,7 +277,10 @@ const AppContent: React.FC = () => {
       const approvedExam = {
         ...examToApprove,
         status: 'approved',
-        approvalDate: new Date()
+        approvalDate: new Date(),
+        // S'assurer que les examens officiels gardent leurs propriétés
+        isOfficial: examToApprove.level === 'officiel' ? true : examToApprove.isOfficial,
+        level: examToApprove.level
       };
       
       setExams(prev => {
