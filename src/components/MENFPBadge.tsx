@@ -12,6 +12,8 @@ const MENFPBadge: React.FC<MENFPBadgeProps> = ({
   variant = 'crown',
   className = '' 
 }) => {
+  console.log('MENFPBadge rendering:', { size, variant, className });
+  
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-3 py-1.5 text-sm',
