@@ -135,10 +135,9 @@ startxref
   const isPopular = exam.downloads > 150;
   const isRecent = new Date(exam.uploadDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
-  // Vérifier si c'est un examen officiel MENFP - logique simplifiée
-  const isMENFPOfficial = exam.isOfficial === true || exam.level === 'officiel';
-  
-  console.log('ExamCard - Exam:', exam.title, 'isOfficial:', exam.isOfficial, 'level:', exam.level, 'isMENFPOfficial:', isMENFPOfficial);
+  // Vérifier si c'est un examen officiel MENFP
+  const examLevel = getLevelByClasse(exam.classe);
+  const isMENFPOfficial = examLevel?.id === 'officiel';
 
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group backdrop-blur-sm">
@@ -153,18 +152,17 @@ startxref
               <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
                 {exam.title}
               </h3>
+              {/* Badge MENFP pour examens officiels */}
+              {isMENFPOfficial && (
+                <div className="mt-2">
+                  <MENFPBadge size="sm" variant="crown" />
+                </div>
+              )}
             </div>
             <div className="ml-3 flex-shrink-0">
               <FileText className="h-6 w-6 text-gray-400 group-hover:text-blue-500 transition-colors" />
             </div>
           </div>
-          
-          {/* Badge MENFP pour examens officiels - déplacé ici */}
-          {isMENFPOfficial && (
-            <div className="ml-3 flex-shrink-0">
-              <MENFPBadge size="sm" variant="crown" />
-            </div>
-          )}
           <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
             {exam.description}
           </p>
