@@ -271,7 +271,10 @@ const AppContent: React.FC = () => {
       const approvedExam = {
         ...examToApprove,
         status: 'approved',
-        approvalDate: new Date()
+        approvalDate: new Date(),
+        // Conserver les propriétés d'examen officiel si elles existent
+        isOfficial: examToApprove.isOfficial,
+        level: examToApprove.level
       };
       
       setExams(prev => {
