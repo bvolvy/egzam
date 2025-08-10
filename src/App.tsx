@@ -239,7 +239,10 @@ const AppContent: React.FC = () => {
       status: 'pending',
       submissionDate: new Date(),
       fileData: examData.fileData,
-      documentUrl: examData.documentUrl
+      documentUrl: examData.documentUrl,
+      // Marquer automatiquement comme officiel si c'est du niveau "officiel"
+      isOfficial: examData.level === 'officiel',
+      level: examData.level
     };
 
     // Ajouter aux examens en attente au lieu des examens publiés

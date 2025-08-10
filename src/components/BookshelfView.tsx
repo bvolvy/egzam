@@ -252,16 +252,13 @@ const BookshelfView: React.FC<BookshelfViewProps> = ({ exams, onDownload, onFavo
                 </div>
               )}
               
-              {/* Badge MENFP pour examens officiels */}
-              {(() => {
-                const examLevel = getLevelByClasse(exam.classe);
-                const isMENFPOfficial = examLevel?.id === 'officiel';
-                return isMENFPOfficial && (
-                  <div className="absolute top-2 left-2 z-10">
-                    <MENFPBadge size="sm" variant="crown" />
-                  </div>
-                );
-              })()}
+              {/* Badge MENFP pour examens officiels - logique simplifiée */}
+              {(exam.isOfficial || exam.level === 'officiel' || 
+                (exam.classe && ['6e AF', '9e AF', 'Rhéto [NS3]', 'Philo [NS4]'].includes(exam.classe))) && (
+                <div className="absolute top-2 left-2 z-10">
+                  <MENFPBadge size="sm" variant="crown" />
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -31,9 +31,9 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
   const [autoRotate, setAutoRotate] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   
-  // Vérifier si c'est un examen officiel MENFP
-  const examLevel = getLevelByClasse(exam.classe);
-  const isMENFPOfficial = examLevel?.id === 'officiel';
+  // Vérifier si c'est un examen officiel MENFP - logique simplifiée
+  const isMENFPOfficial = exam.isOfficial || exam.level === 'officiel' || 
+    (exam.classe && ['6e AF', '9e AF', 'Rhéto [NS3]', 'Philo [NS4]'].includes(exam.classe));
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -782,7 +782,7 @@ startxref
                     {exam.title}
                   </h3>
                   
-                  {/* Badge MENFP pour examens officiels */}
+                  {/* Badge MENFP pour examens officiels - toujours visible si officiel */}
                   {isMENFPOfficial && (
                     <div className="mb-3">
                       <MENFPBadge size="md" variant="crown" />
@@ -804,7 +804,7 @@ startxref
                     {/* Badge niveau officiel */}
                     {isMENFPOfficial && (
                       <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-red-200 text-red-800 text-xs font-bold rounded-full border border-red-300">
-                        📋 Examen d'État
+                        🏛️ Examen d'État MENFP
                       </span>
                     )}
                   </div>

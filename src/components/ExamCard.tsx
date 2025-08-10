@@ -135,9 +135,9 @@ startxref
   const isPopular = exam.downloads > 150;
   const isRecent = new Date(exam.uploadDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
-  // Vérifier si c'est un examen officiel MENFP
-  const examLevel = getLevelByClasse(exam.classe);
-  const isMENFPOfficial = examLevel?.id === 'officiel';
+  // Vérifier si c'est un examen officiel MENFP - logique simplifiée
+  const isMENFPOfficial = exam.isOfficial || exam.level === 'officiel' || 
+    (exam.classe && ['6e AF', '9e AF', 'Rhéto [NS3]', 'Philo [NS4]'].includes(exam.classe));
 
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group backdrop-blur-sm">
@@ -152,7 +152,7 @@ startxref
               <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
                 {exam.title}
               </h3>
-              {/* Badge MENFP pour examens officiels */}
+              {/* Badge MENFP pour examens officiels - toujours affiché si officiel */}
               {isMENFPOfficial && (
                 <div className="mt-2">
                   <MENFPBadge size="sm" variant="crown" />
@@ -176,10 +176,10 @@ startxref
           <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getMatiereColor(exam.matiere)}`}>
             {exam.matiere}
           </span>
-          {/* Badge niveau officiel */}
+          {/* Tag supplémentaire pour examens officiels */}
           {isMENFPOfficial && (
             <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-red-200 text-red-800 text-xs font-bold rounded-full border border-red-300">
-              📋 Officiel
+              🏛️ MENFP Officiel
             </span>
           )}
         </div>

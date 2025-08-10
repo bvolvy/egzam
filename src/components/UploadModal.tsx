@@ -132,10 +132,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
       description: formData.description,
       classe: formData.classe,
       matiere: formData.matiere,
+      level: selectedLevel, // Inclure le niveau sélectionné
       fileName: formData.file.name,
       fileSize: formData.file.size / (1024 * 1024), // Convert to MB
       fileData: formData.file, // Garder une référence au fichier réel
-      documentUrl: fileUrl // URL pour la prévisualisation
+      approvalDate: new Date(),
+      // S'assurer que le statut officiel est préservé
+      isOfficial: examToApprove.level === 'officiel' || examToApprove.isOfficial,
+      level: examToApprove.level
     };
 
     onUpload(examData);
