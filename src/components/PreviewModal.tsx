@@ -803,8 +803,8 @@ startxref
                     </span>
                     {/* Badge niveau officiel */}
                     {isMENFPOfficial && (
-                      <span className="px-3 py-1 bg-gradient-to-r from-red-100 to-red-200 text-red-800 text-xs font-bold rounded-full border border-red-300">
-                        🏛️ Examen d'État MENFP
+                      <span className="px-3 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 text-xs font-bold rounded-full border border-blue-300">
+                        🏛️ Examen Officiel
                       </span>
                     )}
                   </div>
