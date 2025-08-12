@@ -136,10 +136,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
       fileName: formData.file.name,
       fileSize: formData.file.size / (1024 * 1024), // Convert to MB
       fileData: formData.file, // Garder une référence au fichier réel
-      approvalDate: new Date(),
-      // S'assurer que le statut officiel est préservé
-      isOfficial: examToApprove.level === 'officiel' || examToApprove.isOfficial,
-      level: examToApprove.level
     };
 
     onUpload(examData);
