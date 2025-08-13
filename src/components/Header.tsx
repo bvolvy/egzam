@@ -52,6 +52,7 @@ const Header: React.FC<HeaderProps> = ({
   const [showFavorites, setShowFavorites] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(3);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +82,9 @@ const Header: React.FC<HeaderProps> = ({
     setShowUserMenu(false);
   };
   return (
+  const handleNotificationUpdate = (count: number) => {
+    setNotificationCount(count);
+  };
     <>
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -126,9 +130,11 @@ const Header: React.FC<HeaderProps> = ({
                     className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <Bell className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      3
-                    </span>
+                    {notificationCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {notificationCount}
+                      </span>
+                    )}
                   </button>
 
                   {/* User Menu */}
@@ -246,9 +252,11 @@ const Header: React.FC<HeaderProps> = ({
                   >
                     <Bell className="h-4 w-4 mr-3" />
                     Notifications
-                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      3
-                    </span>
+                    {notificationCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {notificationCount}
+                      </span>
+                    )}
                   </button>
                   <button 
                     onClick={handleFavoritesClick}
@@ -303,6 +311,7 @@ const Header: React.FC<HeaderProps> = ({
       <NotificationCenter 
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
+        onNotificationUpdate={handleNotificationUpdate}
       />
 
       {showFavorites && (

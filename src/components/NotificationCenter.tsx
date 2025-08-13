@@ -14,9 +14,10 @@ interface Notification {
 interface NotificationCenterProps {
   isOpen: boolean;
   onClose: () => void;
+  onNotificationUpdate: (count: number) => void;
 }
 
-const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
+const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose, onNotificationUpdate }) => {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
@@ -60,7 +61,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
     }
   ]);
 
+  // Calculer le nombre de notifications non lues
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Mettre à jour le compteur dans le Header quand les notifications changent
+  React.useEffect(() => {
+    onNotificationUpdate(unreadCount);
+  }, [unreadCount, onNotificationUpdate]);
 
   const markAsRead = (id: string) => {
     setNotifications(prev => 
@@ -80,6 +87,26 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
     setNotifications(prev => prev.filter(notif => notif.id !== id));
   };
 
+  // Ajouter une nouvelle notification (fonction utilitaire)
+  const addNotification = (notification: Omit<Notification, 'id'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now().toString()
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  // Marquer toutes les notifications comme lues lors de l'ouverture
+  React.useEffect(() => {
+    if (isOpen && unreadCount > 0) {
+      // Délai pour permettre à l'utilisateur de voir les notifications
+      const timer = setTimeout(() => {
+        // Marquer automatiquement comme lues après 3 secondes d'ouverture
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, unreadCount]);
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'download':
@@ -129,6 +156,28 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
     }
   };
 
+  // Fonction pour simuler l'ajout de nouvelles notifications (pour les tests)
+  const simulateNewNotification = () => {
+    const types = ['download', 'favorite', 'upload', 'system', 'user'];
+    const messages = [
+      'Votre examen a été téléchargé',
+      'Nouveau favori ajouté',
+      'Upload approuvé',
+      'Mise à jour disponible',
+      'Nouveau follower'
+    ];
+    
+    const randomType = types[Math.floor(Math.random() * types.length)];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    
+    addNotification({
+      type: randomType as any,
+      title: 'Nouvelle notification',
+      message: randomMessage,
+      timestamp: new Date(),
+      isRead: false
+    });
+  };
   if (!isOpen) return null;
 
   return (
@@ -172,6 +221,15 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
             </button>
           </div>
         )}
+            
+            {/* Bouton pour simuler une nouvelle notification (développement) */}
+            <button
+              onClick={simulateNewNotification}
+              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded border border-gray-300 hover:bg-gray-100"
+              title="Simuler une nouvelle notification"
+            >
+              + Test
+            </button>
 
         {/* Notifications List */}
         <div className="max-h-96 overflow-y-auto">
@@ -184,6 +242,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
                     !notification.isRead ? 'bg-blue-50' : ''
                   }`}
                 >
+                  {/* Indicateur de notification non lue */}
+                  {!notification.isRead && (
+                    <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-600 rounded-full"></div>
+                  )}
+                  
                   <div className="flex items-start space-x-3">
                     <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
                       {getNotificationIcon(notification.type)}
@@ -236,15 +299,26 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
             <div className="p-8 text-center">
               <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Aucune notification</p>
+              <button
+                onClick={simulateNewNotification}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+              >
+                Ajouter une notification test
+              </button>
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
-            Voir toutes les notifications
-          </button>
+          <div className="flex items-center justify-between">
+            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              Voir toutes les notifications
+            </button>
+            <div className="text-xs text-gray-500">
+              {notifications.length} notification{notifications.length > 1 ? 's' : ''}
+            </div>
+          </div>
         </div>
       </div>
     </div>
