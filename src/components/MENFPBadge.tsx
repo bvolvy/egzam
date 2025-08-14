@@ -40,29 +40,39 @@ const MENFPBadge: React.FC<MENFPBadgeProps> = ({
   return (
     <div className={`
       inline-flex items-center space-x-1.5 
-      bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500
-      text-red-600 font-bold rounded-full shadow-lg
-      border-2 border-yellow-300
-      hover:shadow-xl hover:scale-105 
-      transition-all duration-300 ease-out
+      bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-400
+      text-amber-900 font-extrabold rounded-full shadow-xl
+      border-2 border-yellow-200
+      hover:shadow-2xl hover:scale-110 
+      transition-all duration-500 ease-out
       relative overflow-hidden
+      ring-2 ring-yellow-100/50
       ${sizeClasses[size]}
       ${className}
     `}>
-      {/* Effet de brillance */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+      {/* Effet de brillance doré poli */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"></div>
+      
+      {/* Reflet métallique */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-yellow-600/20 rounded-full"></div>
+      
+      {/* Ombre interne pour l'effet 3D */}
+      <div className="absolute inset-0 shadow-inner rounded-full"></div>
       
       {/* Contenu */}
       <div className="relative flex items-center space-x-1">
         {getIcon()}
-        <span className="font-extrabold tracking-wide drop-shadow-sm">
+        <span className="font-black tracking-wider drop-shadow-md text-shadow-sm">
           MENFP
         </span>
       </div>
       
-      {/* Points décoratifs */}
-      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full shadow-sm"></div>
-      <div className="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 bg-red-400 rounded-full shadow-sm"></div>
+      {/* Points décoratifs dorés */}
+      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-br from-yellow-200 to-amber-400 rounded-full shadow-md border border-yellow-100"></div>
+      <div className="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 bg-gradient-to-br from-amber-300 to-yellow-500 rounded-full shadow-sm border border-amber-200"></div>
+      
+      {/* Éclat lumineux */}
+      <div className="absolute top-0 left-1/4 w-1/2 h-0.5 bg-gradient-to-r from-transparent via-white/60 to-transparent rounded-full"></div>
     </div>
   );
 };
