@@ -81,10 +81,12 @@ const Header: React.FC<HeaderProps> = ({
     setShowFavorites(true);
     setShowUserMenu(false);
   };
-  return (
+
   const handleNotificationUpdate = (count: number) => {
     setNotificationCount(count);
   };
+
+  return (
     <>
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
