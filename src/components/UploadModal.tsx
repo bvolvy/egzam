@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { X, Upload, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import { educationLevels, getClassesByLevel, getMatieresByLevel } from '../data/educationHierarchy';
-import { customDataStorage } from '../utils/storage';
+import { ExamService, ExamMetadata } from '../services/examService';
 import PrivacyTermsPage from './PrivacyTermsPage';
 
 interface UploadModalProps {
   onClose: () => void;
-  onUpload: (examData: any) => void;
+  onUpload?: () => void;
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
@@ -21,15 +21,10 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [showPrivacyTerms, setShowPrivacyTerms] = useState(false);
-  const [customLevels, setCustomLevels] = useState(educationLevels);
-
-  // Charger les niveaux personnalisés au démarrage
-  React.useEffect(() => {
-    const savedLevels = customDataStorage.loadCustomLevels(educationLevels);
-    setCustomLevels(savedLevels);
-  }, []);
+  const [uploadError, setUploadError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setUploadError('');
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -98,36 +93,49 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    setUploadError('');
+    
     if (!formData.file) {
-      alert('Veuillez sélectionner un fichier');
+      setUploadError('Veuillez sélectionner un fichier');
       return;
     }
 
     setIsUploading(true);
     
-    // Simuler l'upload du fichier réel
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // En production, ici on uploadrait le fichier réel vers le serveur
-    // const formDataToSend = new FormData();
-    // formDataToSend.append('file', formData.file);
-    // formDataToSend.append('title', formData.title);
-    // formDataToSend.append('description', formData.description);
-    // formDataToSend.append('classe', formData.classe);
-    // formDataToSend.append('matiere', formData.matiere);
-    // 
-    // const response = await fetch('/api/upload', {
-    //   method: 'POST',
-    //   body: formDataToSend
-    // });
-    
-    // Stocker le fichier réel dans le stockage local pour la prévisualisation
-    const fileUrl = URL.createObjectURL(formData.file);
-    const examId = Date.now().toString();
-    localStorage.setItem(`exam_file_${examId}`, fileUrl);
-    
-    const examData = {
-      id: examId,
+    try {
+      const metadata: ExamMetadata = {
+        title: formData.title,
+        description: formData.description,
+        classe: formData.classe,
+        matiere: formData.matiere,
+        level: selectedLevel,
+        isOfficial: selectedLevel === 'officiel'
+      };
+
+      const result = await ExamService.uploadExam(formData.file, metadata);
+      
+      if (result.success) {
+        alert('Examen téléversé avec succès ! Il sera visible après approbation.');
+        onUpload?.();
+        onClose();
+      } else {
+        setUploadError(result.error || 'Erreur lors du téléversement');
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléversement:', error);
+      setUploadError('Erreur lors du téléversement du fichier');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const getAvailableClasses = () => {
+    return educationLevels.find(l => l.id === selectedLevel)?.classes || [];
+  };
+
+  const getAvailableMatieres = () => {
+    return educationLevels.find(l => l.id === selectedLevel)?.matieres || [];
+  };
       title: formData.title,
       description: formData.description,
       classe: formData.classe,
@@ -231,7 +239,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                 required
               >
                 <option value="">Sélectionner un niveau</option>
-                {customLevels.map(level => (
+                {educationLevels.map(level => (
                   <option key={level.id} value={level.id}>
                     {level.icon} {level.name}
                   </option>
@@ -239,7 +247,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
               </select>
               {selectedLevel && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {customLevels.find(l => l.id === selectedLevel)?.description}
+                  {educationLevels.find(l => l.id === selectedLevel)?.description}
                 </p>
               )}
             </div>
@@ -259,7 +267,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                     required
                   >
                     <option value="">Sélectionner une classe</option>
-                    {(customLevels.find(l => l.id === selectedLevel)?.classes || []).map(classe => (
+                    {getAvailableClasses().map(classe => (
                       <option key={classe} value={classe}>{classe}</option>
                     ))}
                   </select>
@@ -277,7 +285,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                     required
                   >
                     <option value="">Sélectionner une matière</option>
-                    {(customLevels.find(l => l.id === selectedLevel)?.matieres || []).map(matiere => (
+                    {getAvailableMatieres().map(matiere => (
                       <option key={matiere} value={matiere}>{matiere}</option>
                     ))}
                   </select>
@@ -292,6 +300,16 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUpload }) => {
                   <p className="text-sm text-blue-800">
                     📚 Sélectionnez d'abord un niveau d'enseignement pour voir les classes et matières disponibles.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {/* Erreur d'upload */}
+            {uploadError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+                  <p className="text-sm text-red-800">{uploadError}</p>
                 </div>
               </div>
             )}

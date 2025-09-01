@@ -9,15 +9,27 @@ import UploadModal from './components/UploadModal';
 import AdminPanel from './components/AdminPanel';
 import PreviewModal from './components/PreviewModal';
 import Footer from './components/Footer';
-import { mockExams } from './data/mockData';
 import { Exam, FilterOptions } from './types';
-import { examStorage, favoritesStorage, pendingExamStorage, initializeStorage, cleanupStorage } from './utils/storage';
+import { useExams } from './hooks/useExams';
 
 // Composant principal avec accès au contexte d'authentification
 const AppContent: React.FC = () => {
-  const { user, updateUserStats } = useAuth();
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [filteredExams, setFilteredExams] = useState<Exam[]>(mockExams);
+  const { user } = useAuth();
+  const { 
+    exams, 
+    pendingExams, 
+    isLoading, 
+    error, 
+    handleFavorite, 
+    handleDownload, 
+    approveExam, 
+    rejectExam, 
+    deleteExam,
+    refreshExams,
+    refreshPendingExams
+  } = useExams();
+  
+  const [filteredExams, setFilteredExams] = useState<Exam[]>([]);
   const [searchResults, setSearchResults] = useState<Exam[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [currentSearchTerm, setCurrentSearchTerm] = useState('');
@@ -32,62 +44,7 @@ const AppContent: React.FC = () => {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewExam, setPreviewExam] = useState<Exam | null>(null);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [pendingExams, setPendingExams] = useState<Exam[]>([]);
 
-  // Initialisation des données au démarrage
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Initialiser le stockage
-        const { isFirstVisit } = initializeStorage();
-        
-        // Charger les examens depuis le stockage ou utiliser les mocks
-        const storedExams = examStorage.load();
-        const initialExams = storedExams.length > 0 ? storedExams : mockExams;
-        
-        // Charger les favoris
-        const storedFavorites = favoritesStorage.load();
-        
-        // Appliquer les favoris aux examens
-        const examsWithFavorites = initialExams.map(exam => ({
-          ...exam,
-          isFavorited: storedFavorites.includes(exam.id)
-        }));
-        
-        setExams(examsWithFavorites);
-        
-        // Charger les examens en attente
-        const storedPendingExams = pendingExamStorage.load();
-        setPendingExams(storedPendingExams);
-        
-        // Si c'est la première visite, sauvegarder les examens mock
-        if (isFirstVisit && storedExams.length === 0) {
-          examStorage.save(examsWithFavorites);
-        }
-        
-        // Nettoyer les données anciennes
-        cleanupStorage(30);
-        
-        setIsInitialized(true);
-        console.log('✅ Application initialisée avec succès');
-      } catch (error) {
-        console.error('❌ Erreur lors de l\'initialisation:', error);
-        // En cas d'erreur, utiliser les données mock
-        setExams(mockExams);
-        setIsInitialized(true);
-      }
-    };
-
-    initializeApp();
-  }, []);
-
-  // Sauvegarder automatiquement les examens quand ils changent
-  useEffect(() => {
-    if (isInitialized && exams.length > 0) {
-      examStorage.save(exams);
-    }
-  }, [exams, isInitialized]);
   // Filter and sort exams
   useEffect(() => {
     let filtered = [...exams];
@@ -162,58 +119,6 @@ const AppContent: React.FC = () => {
     setSearchResults([]);
   };
 
-  const handleDownload = (examId: string) => {
-    // Simulate download
-    setExams(prev => {
-      const updated = prev.map(exam => 
-        exam.id === examId 
-          ? { ...exam, downloads: exam.downloads + 1 }
-          : exam
-      );
-      return updated;
-    });
-    
-    // Mettre à jour les statistiques utilisateur
-    if (user) {
-      updateUserStats('download');
-    }
-    
-    // Show success message
-    alert('Téléchargement démarré !');
-  };
-
-  const handleFavorite = (examId: string) => {
-    const wasAlreadyFavorited = exams.find(e => e.id === examId)?.isFavorited;
-    
-    setExams(prev => {
-      const updated = prev.map(exam => 
-        exam.id === examId 
-          ? { 
-              ...exam, 
-              isFavorited: !exam.isFavorited,
-              favorites: exam.isFavorited ? exam.favorites - 1 : exam.favorites + 1
-            }
-          : exam
-      );
-      
-      // Mettre à jour les favoris dans le stockage
-      const exam = updated.find(e => e.id === examId);
-      if (exam) {
-        if (exam.isFavorited) {
-          favoritesStorage.add(examId);
-          // Incrémenter les statistiques si c'est un nouveau favori
-          if (user && !wasAlreadyFavorited) {
-            updateUserStats('favorite');
-          }
-        } else {
-          favoritesStorage.remove(examId);
-        }
-      }
-      
-      return updated;
-    });
-  };
-
   const handlePreview = (examId: string) => {
     const exam = exams.find(e => e.id === examId);
     if (exam) {
@@ -222,87 +127,13 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleUpload = (examData: any) => {
-    const newExam: Exam = {
-      id: examData.id || Date.now().toString(),
-      title: examData.title,
-      description: examData.description,
-      classe: examData.classe,
-      matiere: examData.matiere,
-      fileName: examData.fileName,
-      fileSize: Math.round(examData.fileSize * 10) / 10,
-      uploadDate: new Date(),
-      downloads: 0,
-      favorites: 0,
-      uploader: { id: user?.id || '1', name: user?.name || 'Utilisateur' },
-      isFavorited: false,
-      status: 'pending',
-      submissionDate: new Date(),
-      fileData: examData.fileData,
-      documentUrl: examData.documentUrl,
-      // Marquer automatiquement comme officiel si c'est du niveau "officiel"
-      isOfficial: examData.level === 'officiel',
-      level: examData.level
-    };
-
-    // Ajouter aux examens en attente au lieu des examens publiés
-    setPendingExams(prev => {
-      const updated = [newExam, ...prev];
-      pendingExamStorage.save(updated);
-      return updated;
-    });
-    
-    // Mettre à jour les statistiques utilisateur
-    if (user) {
-      updateUserStats('upload');
-    }
-    
+  const handleUploadSuccess = () => {
+    refreshPendingExams();
     setShowUploadModal(false);
-    alert('Examen soumis avec succès ! Il sera visible après approbation par un administrateur.');
   };
 
-  // Fonctions de gestion des examens en attente
-  const handleApproveExam = (examId: string) => {
-    const examToApprove = pendingExams.find(exam => exam.id === examId);
-    if (examToApprove) {
-      // Retirer de la liste d'attente
-      const updatedPending = pendingExams.filter(exam => exam.id !== examId);
-      setPendingExams(updatedPending);
-      pendingExamStorage.save(updatedPending);
-      
-      // Ajouter aux examens publiés
-      const approvedExam = {
-        ...examToApprove,
-        status: 'approved',
-        approvalDate: new Date()
-      };
-      
-      setExams(prev => {
-        const updated = [approvedExam, ...prev];
-        examStorage.save(updated);
-        return updated;
-      });
-    }
-  };
-
-  const handleRejectExam = (examId: string) => {
-    const updatedPending = pendingExams.map(exam => 
-      exam.id === examId 
-        ? { ...exam, status: 'rejected', rejectionDate: new Date() }
-        : exam
-    );
-    setPendingExams(updatedPending);
-    pendingExamStorage.save(updatedPending);
-  };
-
-  const handleDeletePendingExam = (examId: string) => {
-    const updatedPending = pendingExams.filter(exam => exam.id !== examId);
-    setPendingExams(updatedPending);
-    pendingExamStorage.save(updatedPending);
-  };
-
-  // Afficher un loader pendant l'initialisation
-  if (!isInitialized) {
+  // Afficher un loader pendant le chargement
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-red-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -312,8 +143,22 @@ const AppContent: React.FC = () => {
       </div>
     );
   }
+
+  // Afficher une erreur si le chargement a échoué
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-red-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-red-50/30 flex flex-col">
         <Header 
           onSearch={handleSearch}
@@ -368,7 +213,7 @@ const AppContent: React.FC = () => {
         {showUploadModal && (
           <UploadModal
             onClose={() => setShowUploadModal(false)}
-            onUpload={handleUpload}
+            onUpload={handleUploadSuccess}
           />
         )}
 
@@ -377,14 +222,10 @@ const AppContent: React.FC = () => {
             onClose={() => setShowAdminPanel(false)}
             pendingExams={pendingExams}
             publishedExams={exams}
-            onApproveExam={handleApproveExam}
-            onRejectExam={handleRejectExam}
-            onDeletePendingExam={handleDeletePendingExam}
-            onDeletePublishedExam={(examId) => {
-              const updated = exams.filter(exam => exam.id !== examId);
-              setExams(updated);
-              examStorage.save(updated);
-            }}
+            onApproveExam={approveExam}
+            onRejectExam={rejectExam}
+            onDeletePendingExam={deleteExam}
+            onDeletePublishedExam={deleteExam}
           />
         )}
 
@@ -400,7 +241,6 @@ const AppContent: React.FC = () => {
           />
         )}
       </div>
-    </AuthProvider>
   );
 }
 
