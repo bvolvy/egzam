@@ -5,7 +5,7 @@ import Header from './components/Header';
 import BookshelfView from './components/BookshelfView';
 import SearchResults from './components/SearchResults';
 import HierarchicalFilterPanel from './components/HierarchicalFilterPanel';
-import UploadModal from './components/UploadModal';
+import { UploadModal } from './components/UploadModal';
 import AdminPanel from './components/AdminPanel';
 import PreviewModal from './components/PreviewModal';
 import Footer from './components/Footer';
