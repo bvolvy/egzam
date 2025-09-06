@@ -70,7 +70,6 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
   };
 
   const getFilteredLevels = () => {
-    if (!searchTerm) return customLevels;
     if (!searchTerm) return educationLevels;
     
     return educationLevels.filter(level => 
