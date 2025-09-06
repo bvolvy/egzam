@@ -33,25 +33,6 @@ export const auth = {
       },
     });
     return { data, error };
-  },
-
-  signIn: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
-  },
-
-  signOut: async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
-  },
-
-  getCurrentUser: () => {
-    return supabase.auth.getUser();
-  },
-
   onAuthStateChange: (callback: (user: AuthUser | null) => void) => {
     return supabase.auth.onAuthStateChange((event, session) => {
       callback(session?.user as AuthUser | null);

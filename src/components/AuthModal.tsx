@@ -181,8 +181,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
           {isLogin && (
             <div className="text-center text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
               <p className="font-medium mb-1">Comptes de démonstration :</p>
-              <p>admin@egzamachiv.ht / password (Admin)</p>
-              <p>marie@example.com / password (Utilisateur)</p>
+              <p className="mb-1">
+                <strong>Admin:</strong> admin@egzamachiv.ht / password
+              </p>
+              <p>
+                <strong>Utilisateur:</strong> marie@example.com / password
+              </p>
+              <p className="text-xs mt-2 text-amber-600">
+                ⚠️ Ces comptes doivent être créés dans votre projet Supabase
+              </p>
             </div>
           )}
         </form>

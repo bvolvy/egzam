@@ -59,10 +59,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     
     try {
-      const { data, error } = await auth.signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
       if (error) {
-        console.error('Erreur de connexion:', error);
+        console.error('Erreur de connexion:', error.message);
         setIsLoading(false);
         return false;
       }
@@ -85,10 +88,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     
     try {
-      const { data, error } = await auth.signUp(email, password, name);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
       
       if (error) {
-        console.error('Erreur d\'inscription:', error);
+        console.error('Erreur d\'inscription:', error.message);
         setIsLoading(false);
         return false;
       }
@@ -117,7 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      await auth.signOut();
+      await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
