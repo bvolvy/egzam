@@ -33,7 +33,7 @@ export const auth = {
       },
     });
     return { data, error };
-  }
+  },
   onAuthStateChange: (callback: (user: AuthUser | null) => void) => {
     return supabase.auth.onAuthStateChange((event, session) => {
       callback(session?.user as AuthUser | null);
