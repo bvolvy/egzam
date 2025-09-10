@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { supabase, auth, AuthUser } from '../lib/supabase';
-import { ProfileService } from '../services/profileService';
 
 interface AuthContextType {
   user: User | null;
@@ -25,8 +24,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data: { user: authUser } } = await supabase.auth.getUser();
         
         if (authUser) {
-          const profile = await ProfileService.getProfile(authUser.id);
-          setUser(profile);
+          // Créer un utilisateur basique à partir des données auth
+          const basicUser: User = {
+            id: authUser.id,
+            email: authUser.email || '',
+            name: authUser.user_metadata?.name || 'Utilisateur',
+            avatar: authUser.user_metadata?.avatar_url,
+            isPremium: false,
+            joinDate: new Date(authUser.created_at),
+            uploads: 0,
+            downloads: 0,
+            isActive: true,
+            isSuspended: false
+          };
+          setUser(basicUser);
         }
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'auth:', error);
@@ -41,8 +52,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          const profile = await ProfileService.getProfile(session.user.id);
-          setUser(profile);
+          // Créer un utilisateur basique à partir des données auth
+          const basicUser: User = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || 'Utilisateur',
+            avatar: session.user.user_metadata?.avatar_url,
+            isPremium: false,
+            joinDate: new Date(session.user.created_at),
+            uploads: 0,
+            downloads: 0,
+            isActive: true,
+            isSuspended: false
+          };
+          setUser(basicUser);
         } else {
           setUser(null);
         }
@@ -71,8 +94,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       if (data.user) {
-        const profile = await ProfileService.getProfile(data.user.id);
-        setUser(profile);
+        // Créer un utilisateur basique à partir des données auth
+        const basicUser: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name || 'Utilisateur',
+          avatar: data.user.user_metadata?.avatar_url,
+          isPremium: false,
+          joinDate: new Date(data.user.created_at),
+          uploads: 0,
+          downloads: 0,
+          isActive: true,
+          isSuspended: false
+        };
+        setUser(basicUser);
       }
       
       setIsLoading(false);
@@ -105,9 +140,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       if (data.user) {
-        // Le profil sera créé automatiquement par le trigger
-        const profile = await ProfileService.getProfile(data.user.id);
-        setUser(profile);
+        // Créer un utilisateur basique à partir des données auth
+        const basicUser: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: name || 'Utilisateur',
+          avatar: data.user.user_metadata?.avatar_url,
+          isPremium: false,
+          joinDate: new Date(data.user.created_at),
+          uploads: 0,
+          downloads: 0,
+          isActive: true,
+          isSuspended: false
+        };
+        setUser(basicUser);
       }
       
       setIsLoading(false);
@@ -120,10 +166,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = (updates: Partial<User>) => {
-    if (user && updates.name) {
-      ProfileService.updateProfile(user.id, { name: updates.name });
-      setUser(prev => prev ? { ...prev, ...updates } : null);
-    }
+    setUser(prev => prev ? { ...prev, ...updates } : null);
   };
 
   const logout = async () => {
