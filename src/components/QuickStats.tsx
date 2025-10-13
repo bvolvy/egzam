@@ -123,8 +123,8 @@ const QuickStats: React.FC<QuickStatsProps> = ({
           </div>
         </div>
       ))}
-      
-      <style jsx>{`
+
+      <style dangerouslySetInnerHTML={{__html: `
         @keyframes slideIn {
           from {
             width: 0%;
@@ -133,7 +133,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({
             width: 100%;
           }
         }
-      `}</style>
+      `}} />
     </div>
   );
 };

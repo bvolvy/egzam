@@ -207,19 +207,19 @@ const HierarchicalFilterPanel: React.FC<HierarchicalFilterPanelProps> = ({
                   {selectedLevel === level.id && (
                     <div className={`w-2 h-2 bg-${level.color.accent} rounded-full animate-pulse`}></div>
                   )}
-                  <button
+                  <div
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleSection(level.id);
                     }}
-                    className="p-1 hover:bg-gray-200 rounded"
+                    className="p-1 hover:bg-gray-200 rounded cursor-pointer"
                   >
                     {expandedSections.has(level.id) ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
                       <ChevronRight className="h-4 w-4" />
                     )}
-                  </button>
+                  </div>
                 </div>
               </button>
 

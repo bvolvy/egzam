@@ -11,6 +11,7 @@ import PreviewModal from './components/PreviewModal';
 import Footer from './components/Footer';
 import { Exam, FilterOptions } from './types';
 import { useExams } from './hooks/useExams';
+import { ExamService } from './services/examService';
 
 // Composant principal avec accès au contexte d'authentification
 const AppContent: React.FC = () => {
@@ -127,9 +128,16 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleUploadSuccess = () => {
-    refreshPendingExams();
-    setShowUploadModal(false);
+  const handleUpload = async (file: File, metadata: any) => {
+    try {
+      const result = await ExamService.uploadExam(file, metadata);
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors de l\'upload');
+      }
+      await refreshPendingExams();
+    } catch (error) {
+      throw error;
+    }
   };
 
   // Afficher un loader pendant le chargement
@@ -212,8 +220,9 @@ const AppContent: React.FC = () => {
         {/* Modals */}
         {showUploadModal && (
           <UploadModal
+            isOpen={showUploadModal}
             onClose={() => setShowUploadModal(false)}
-            onUpload={handleUploadSuccess}
+            onUpload={handleUpload}
           />
         )}
 
