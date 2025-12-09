@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   isLoading: boolean;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Vérifier la session Supabase existante
@@ -80,21 +82,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
+    setError(null);
+
     try {
+      console.log('Tentative de connexion:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) {
         console.error('Erreur de connexion:', error.message);
+        setError(error.message || 'Erreur de connexion');
         setIsLoading(false);
         return false;
       }
 
       if (data.user) {
-        // Créer un utilisateur basique à partir des données auth
+        console.log('Connexion réussie:', data.user.email);
         const basicUser: User = {
           id: data.user.id,
           email: data.user.email || '',
@@ -108,12 +113,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isSuspended: false
         };
         setUser(basicUser);
+        setError(null);
       }
-      
+
       setIsLoading(false);
       return true;
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Erreur technique';
+      console.error('Erreur lors de la connexion:', errorMsg);
+      setError(errorMsg);
       setIsLoading(false);
       return false;
     }
@@ -121,8 +129,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
+    setError(null);
+
     try {
+      console.log('Tentative d\'inscription:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -132,15 +142,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
       });
-      
+
       if (error) {
         console.error('Erreur d\'inscription:', error.message);
+        setError(error.message || 'Erreur d\'inscription');
         setIsLoading(false);
         return false;
       }
 
       if (data.user) {
-        // Créer un utilisateur basique à partir des données auth
+        console.log('Utilisateur créé:', data.user.email);
         const basicUser: User = {
           id: data.user.id,
           email: data.user.email || '',
@@ -154,12 +165,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isSuspended: false
         };
         setUser(basicUser);
+        setError(null);
       }
-      
+
       setIsLoading(false);
       return true;
     } catch (error) {
-      console.error('Erreur lors de l\'inscription:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Erreur technique';
+      console.error('Erreur lors de l\'inscription:', errorMsg);
+      setError(errorMsg);
       setIsLoading(false);
       return false;
     }
@@ -179,7 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );

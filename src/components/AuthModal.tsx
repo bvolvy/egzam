@@ -8,7 +8,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
-  const { login, register, isLoading } = useAuth();
+  const { login, register, isLoading, error: authError } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
@@ -37,8 +37,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
       if (success) {
         onSuccess();
+      } else if (authError) {
+        setError(authError);
       } else {
-        setError('Identifiants incorrects');
+        setError(isLogin ? 'Identifiants incorrects' : 'Erreur lors de l\'inscription');
       }
     } catch (err) {
       setError('Une erreur est survenue');
