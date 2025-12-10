@@ -152,6 +152,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (data.user) {
         console.log('Utilisateur créé:', data.user.email);
+
+        try {
+          await supabase.from('profiles').insert({
+            id: data.user.id,
+            name: name || 'Utilisateur',
+            avatar_url: data.user.user_metadata?.avatar_url,
+            is_admin: false
+          });
+        } catch (profileError) {
+          console.error('Erreur lors de la création du profil:', profileError);
+        }
+
         const basicUser: User = {
           id: data.user.id,
           email: data.user.email || '',
