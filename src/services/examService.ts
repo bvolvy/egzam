@@ -102,24 +102,26 @@ export class ExamService {
   // Upload d'un nouvel examen
   static async uploadExam(file: File, metadata: ExamMetadata): Promise<UploadResult> {
     try {
-      // Vérifier l'authentification
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Vérifier l'authentification et obtenir le token JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         return { success: false, error: 'Utilisateur non authentifié' };
       }
+
+      const token = session.access_token;
 
       // Préparer les données pour l'upload
       const formData = new FormData();
       formData.append('file', file);
       formData.append('metadata', JSON.stringify(metadata));
 
-      // Upload vers Backblaze via edge function
+      // Upload vers edge function
       const uploadResponse = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-file`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: formData,
         }
@@ -238,12 +240,14 @@ export class ExamService {
   // Générer une URL de téléchargement sécurisée
   static async generateDownloadUrl(fileName: string): Promise<string | null> {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-download-url`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ fileName }),
