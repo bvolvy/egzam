@@ -146,7 +146,7 @@ export class ExamService {
           file_name: uploadResult.originalFileName,
           file_size: uploadResult.fileSize,
           file_url: uploadResult.fileUrl,
-          uploader_id: user.id,
+          uploader_id: session.user.id,
           is_official: metadata.isOfficial || metadata.level === 'officiel',
           status: 'pending'
         })
