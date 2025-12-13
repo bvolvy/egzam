@@ -155,7 +155,12 @@ export class ExamService {
 
       if (examError) {
         console.error('Erreur lors de la sauvegarde des métadonnées:', examError);
-        return { success: false, error: 'Erreur lors de la sauvegarde' };
+        console.error('Détails de l\'erreur:', {
+          message: examError.message,
+          code: examError.code,
+          details: (examError as any).details
+        });
+        return { success: false, error: `Erreur lors de la sauvegarde: ${examError.message}` };
       }
 
       return { success: true, examId: examData.id };
