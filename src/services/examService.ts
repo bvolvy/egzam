@@ -144,6 +144,7 @@ export class ExamService {
           matiere: metadata.matiere,
           level: metadata.level,
           file_name: uploadResult.originalFileName,
+          file_path: uploadResult.filePath,
           file_size: uploadResult.fileSize,
           file_url: uploadResult.fileUrl,
           uploader_id: session.user.id,
