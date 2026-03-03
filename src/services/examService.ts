@@ -110,6 +110,24 @@ export class ExamService {
 
       const token = session.access_token;
 
+      // S'assurer que le profil de l'utilisateur existe
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({ id: session.user.id });
+
+        if (profileError) {
+          console.error('Erreur lors de la création du profil:', profileError);
+          return { success: false, error: 'Erreur lors de la création du profil utilisateur' };
+        }
+      }
+
       // Préparer les données pour l'upload
       const formData = new FormData();
       formData.append('file', file);
