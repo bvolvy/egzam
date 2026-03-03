@@ -3,6 +3,7 @@ import { Exam, FilterOptions } from '../types';
 import { mockExams } from '../data/mockData';
 import { favoritesStorage } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
+import { ExamService } from '../services/examService';
 
 export const useExams = () => {
   const { user } = useAuth();
@@ -15,9 +16,8 @@ export const useExams = () => {
   const loadExams = async () => {
     try {
       setIsLoading(true);
-      // Utiliser les données mock pour éviter les problèmes de base de données
-      const approvedExams = mockExams;
-      
+      const approvedExams = await ExamService.getApprovedExams();
+
       // Charger les favoris de l'utilisateur si connecté
       if (user) {
         const userFavorites = favoritesStorage.load();
@@ -32,6 +32,7 @@ export const useExams = () => {
     } catch (err) {
       setError('Erreur lors du chargement des examens');
       console.error(err);
+      setExams(mockExams);
     } finally {
       setIsLoading(false);
     }
@@ -39,14 +40,14 @@ export const useExams = () => {
 
   // Charger les examens en attente (admin seulement)
   const loadPendingExams = async () => {
-    if (!user || user.email !== 'admin@egzamachiv.ht') {
+    if (!user) {
       setPendingExams([]);
       return;
     }
-    
+
     try {
-      // Pour l'instant, pas d'examens en attente
-      setPendingExams([]);
+      const pending = await ExamService.getPendingExams();
+      setPendingExams(pending);
     } catch (err) {
       console.error('Erreur lors du chargement des examens en attente:', err);
       setPendingExams([]);
@@ -58,9 +59,9 @@ export const useExams = () => {
     loadExams();
   }, [user]);
 
-  // Charger les examens en attente si admin
+  // Charger les examens en attente si connecté
   useEffect(() => {
-    if (user?.email === 'admin@egzamachiv.ht') {
+    if (user) {
       loadPendingExams();
     }
   }, [user]);
@@ -108,42 +109,52 @@ export const useExams = () => {
 
   // Approuver un examen
   const approveExam = async (examId: string) => {
-    const success = true; // Simuler le succès
-    if (success) {
-      // Déplacer de pending vers approved
-      const examToApprove = pendingExams.find(e => e.id === examId);
-      if (examToApprove) {
-        setPendingExams(prev => prev.filter(e => e.id !== examId));
-        setExams(prev => [{
-          ...examToApprove,
-          status: 'approved' as const
-        }, ...prev]);
+    try {
+      const success = await ExamService.approveExam(examId);
+      if (success) {
+        const examToApprove = pendingExams.find(e => e.id === examId);
+        if (examToApprove) {
+          setPendingExams(prev => prev.filter(e => e.id !== examId));
+          setExams(prev => [{
+            ...examToApprove,
+            status: 'approved' as const
+          }, ...prev]);
+        }
       }
+      return success;
+    } catch (error) {
+      console.error('Erreur lors de l\'approbation:', error);
+      return false;
     }
-    return success;
   };
 
   // Rejeter un examen
   const rejectExam = async (examId: string, reason?: string) => {
-    const success = true; // Simuler le succès
-    if (success) {
-      setPendingExams(prev => prev.map(e => 
-        e.id === examId 
-          ? { ...e, status: 'rejected' as const }
-          : e
-      ));
+    try {
+      const success = await ExamService.rejectExam(examId, reason);
+      if (success) {
+        setPendingExams(prev => prev.filter(e => e.id !== examId));
+      }
+      return success;
+    } catch (error) {
+      console.error('Erreur lors du rejet:', error);
+      return false;
     }
-    return success;
   };
 
   // Supprimer un examen
   const deleteExam = async (examId: string) => {
-    const success = true; // Simuler le succès
-    if (success) {
-      setExams(prev => prev.filter(e => e.id !== examId));
-      setPendingExams(prev => prev.filter(e => e.id !== examId));
+    try {
+      const success = await ExamService.deleteExam(examId);
+      if (success) {
+        setExams(prev => prev.filter(e => e.id !== examId));
+        setPendingExams(prev => prev.filter(e => e.id !== examId));
+      }
+      return success;
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      return false;
     }
-    return success;
   };
 
   return {
