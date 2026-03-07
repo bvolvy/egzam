@@ -3,6 +3,7 @@ import { X, Download, Heart, User, Calendar, FileText, ZoomIn, ZoomOut, RotateCw
 import { Exam } from '../types';
 import MENFPBadge from './MENFPBadge';
 import { getLevelByClasse } from '../data/educationHierarchy';
+import { ExamService } from '../services/examService';
 
 interface PreviewModalProps {
   exam: Exam;
@@ -43,7 +44,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
     const loadRealDocument = async () => {
       setIsLoadingContent(true);
       setError('');
-      
+
       try {
         // Vérifier d'abord si on a le fichier réel en mémoire
         if (exam.fileData && exam.fileData instanceof File) {
@@ -52,24 +53,28 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
           setDocumentUrl(url);
           setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
         }
-        // Sinon, vérifier si on a une URL de document stockée
-        else if (exam.documentUrl) {
-          console.log('🔗 Chargement du document depuis URL stockée:', exam.documentUrl);
-          setDocumentUrl(exam.documentUrl);
-          setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
+        // Sinon, essayer de générer une URL de téléchargement sécurisée
+        else if (exam.fileName) {
+          console.log('🔗 Génération d\'une URL de téléchargement sécurisée pour:', exam.fileName);
+          const downloadUrl = await ExamService.generateDownloadUrl(exam.fileName);
+          if (downloadUrl) {
+            setDocumentUrl(downloadUrl);
+            setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
+          } else {
+            throw new Error('Impossible de générer l\'URL de téléchargement');
+          }
         }
         // Pour les examens sans fichier réel, essayer de récupérer depuis le stockage local
         else {
           console.log('🗄️ Tentative de récupération depuis le stockage local pour:', exam.id);
           const storedFileUrl = localStorage.getItem(`exam_file_${exam.id}`);
-          
+
           if (storedFileUrl) {
             console.log('✅ Fichier trouvé dans le stockage local');
             setDocumentUrl(storedFileUrl);
             setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
           } else {
             console.log('⚠️ Aucun fichier réel disponible, génération d\'un document de démonstration');
-            // Générer un document de démonstration uniquement si aucun fichier réel n'est disponible
             const documentData = await generateDemoDocument(exam);
             const blob = new Blob([documentData], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
@@ -77,7 +82,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
             setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
           }
         }
-        
+
       } catch (error) {
         console.error('❌ Erreur lors du chargement du document:', error);
         setError('Impossible de charger le document. Le fichier pourrait être indisponible ou corrompu.');
@@ -89,11 +94,11 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
     loadRealDocument();
 
     return () => {
-      if (documentUrl) {
+      if (documentUrl && documentUrl.startsWith('blob:')) {
         URL.revokeObjectURL(documentUrl);
       }
     };
-  }, [exam.id, exam.fileData, exam.documentUrl]);
+  }, [exam.id, exam.fileData, exam.fileName]);
 
   // Focus sur l'input de page quand il s'affiche
   useEffect(() => {
