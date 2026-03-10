@@ -262,9 +262,11 @@ export class ExamService {
   }
 
   // Générer une URL de téléchargement sécurisée
-  static async generateDownloadUrl(fileName: string): Promise<string | null> {
+  static async generateDownloadUrl(examIdOrFileName: string): Promise<string | null> {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(examIdOrFileName);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-download-url`,
@@ -274,7 +276,11 @@ export class ExamService {
             'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ fileName }),
+          body: JSON.stringify(
+            isUUID
+              ? { examId: examIdOrFileName }
+              : { fileName: examIdOrFileName }
+          ),
         }
       );
 

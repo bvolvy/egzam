@@ -17,11 +17,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { fileName } = await req.json();
+    const { fileName, examId } = await req.json();
 
-    if (!fileName) {
+    if (!fileName && !examId) {
       return new Response(
-        JSON.stringify({ error: 'Nom de fichier requis' }),
+        JSON.stringify({ error: 'Nom de fichier ou ID examen requis' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -38,7 +38,22 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const filePath = `exams/${fileName}`;
+    let filePath = '';
+
+    if (examId) {
+      const { data: exam, error: dbError } = await supabase
+        .from('exams')
+        .select('file_path')
+        .eq('id', examId)
+        .maybeSingle();
+
+      if (dbError || !exam?.file_path) {
+        throw new Error('Examen non trouvé ou chemin de fichier manquant');
+      }
+      filePath = exam.file_path;
+    } else {
+      filePath = `exams/${fileName}`;
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from('exam-files')

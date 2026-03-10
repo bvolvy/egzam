@@ -54,9 +54,9 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ exam, onClose, onDownload, 
           setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
         }
         // Sinon, essayer de générer une URL de téléchargement sécurisée
-        else if (exam.fileName) {
-          console.log('🔗 Génération d\'une URL de téléchargement sécurisée pour:', exam.fileName);
-          const downloadUrl = await ExamService.generateDownloadUrl(exam.fileName);
+        else if (exam.id) {
+          console.log('🔗 Génération d\'une URL de téléchargement sécurisée pour:', exam.id);
+          const downloadUrl = await ExamService.generateDownloadUrl(exam.id);
           if (downloadUrl) {
             setDocumentUrl(downloadUrl);
             setTotalPages(Math.max(1, Math.floor(exam.fileSize / 0.3) + 1));
